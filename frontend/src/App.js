@@ -16,7 +16,7 @@ function App() {
 
       const data = await response.json();
 
-      setMessage(data.message);
+      setMessage(data);
 
       if (topic.trim() !== "") {
         setHistory((prev) => [...prev, topic]);
@@ -56,10 +56,21 @@ function App() {
         Clear
       </button>
 
-      <p>{message}</p>
+      {message.topic && (
+  <div>
+    <h2>{message.topic}</h2>
+    <p>Difficulty: {message.difficulty}</p>
+
+    <div>
+  {message.tasks.map((task, index) => (
+    <p key={index}>{task}</p>
+  ))}
+</div>
+  </div>
+)}
 
       <h3>Recent Topics</h3>
-      <ul style={{ listStyle: "none" }}>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {history.map((item, index) => (
           <li key={index}>{item}</li>
         ))}
