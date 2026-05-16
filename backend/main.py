@@ -53,3 +53,19 @@ def study(topic: str):
         "difficulty": "Custom",
         "tasks": [f"Study {topic} basics"]
     }
+    
+
+@app.get("/ask")
+def ask_ai(question: str):
+    question = question.lower()
+
+    if "dbms" in question:
+        return {"answer": "DBMS normalization reduces data redundancy and improves consistency."}
+
+    elif "react" in question:
+        return {"answer": "React uses components to build reusable UI."}
+
+    elif "ai" in question:
+        return {"answer": "AI enables machines to simulate human intelligence."}
+
+    return {"answer": f"I understand your question about: {question}"}

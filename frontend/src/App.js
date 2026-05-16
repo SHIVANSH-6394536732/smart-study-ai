@@ -5,6 +5,9 @@ function App() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [questionHistory, setQuestionHistory] = useState([]);
 
   const studyTopic = async () => {
     try {
@@ -29,6 +32,20 @@ function App() {
     }
   };
 
+
+  const askAI = async () => {
+    const response = await fetch(
+      `http://127.0.0.1:8000/ask?question=${question}`
+    );
+  
+    const data = await response.json();
+    setAnswer(data.answer);
+    if (question.trim() !== "") {
+      setQuestionHistory((prev) => [...prev, question]);
+    }
+  };
+
+
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>
       <h1>Smart Study AI</h1>
@@ -51,13 +68,47 @@ function App() {
           setTopic("");
           setMessage("");
           setHistory([]);
+          setQuestion("");
+          setAnswer("");
+          setQuestionHistory([]);
         }}
       >
         Clear
       </button>
 
+      <h2>Ask AI</h2>
+
+<input
+  type="text"
+  placeholder="Ask something..."
+  value={question}
+  onChange={(e) => setQuestion(e.target.value)}
+/>
+
+<br /><br />
+
+<button onClick={askAI}>
+  Ask
+</button>
+
+<p>{answer}</p>
+<h3>AI Question History</h3>
+<ul style={{ listStyle: "none", padding: 0 }}>
+  {questionHistory.map((item, index) => (
+    <li key={index}>{item}</li>
+  ))}
+</ul>
+
+{message.topic && (
+  <div>
+    <h2>{message.topic}</h2>
+    ...
+  </div>
+)}
+
       {message.topic && (
   <div>
+    
     <h2>{message.topic}</h2>
     <p>Difficulty: {message.difficulty}</p>
 
