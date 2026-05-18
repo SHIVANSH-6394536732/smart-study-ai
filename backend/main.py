@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from google import genai
+from groq import Groq
+import fitz  # pymupdf
 
 app = FastAPI()
 
@@ -12,7 +13,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = genai.Client(api_key="AIzaSyCf8kZegLC6WNA4hPl_JF55J3iOc_ux7jU")
+groq_client = Groq(api_key="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")
+
+pdf_text_store = {}  # stores extracted PDF text in memory
 
 @app.get("/")
 def home():
@@ -33,11 +36,43 @@ def study(topic: str):
 @app.get("/ask")
 def ask_ai(question: str):
     try:
-        prompt = f"You are a helpful study assistant for students. Answer this clearly and concisely: {question}"
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-lite",
-            contents=prompt
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a helpful study assistant for students. Answer clearly and concisely."},
+                {"role": "user", "content": question}
+            ]
         )
-        return {"answer": response.text}
+        return {"answer": response.choices[0].message.content}
+    except Exception as e:
+        return {"answer": f"Error: {str(e)}"}
+
+@app.post("/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        doc = fitz.open(stream=contents, filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        pdf_text_store["current"] = text
+        return {"message": "PDF uploaded successfully", "pages": doc.page_count}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/ask-pdf")
+def ask_pdf(question: str):
+    if "current" not in pdf_text_store:
+        return {"answer": "No PDF uploaded yet. Please upload a PDF first."}
+    try:
+        context = pdf_text_store["current"][:3000]  # first 3000 chars to stay within token limit
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a study assistant. Answer questions based only on the provided notes."},
+                {"role": "user", "content": f"Notes:\n{context}\n\nQuestion: {question}"}
+            ]
+        )
+        return {"answer": response.choices[0].message.content}
     except Exception as e:
         return {"answer": f"Error: {str(e)}"}

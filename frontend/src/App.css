@@ -77,3 +77,15 @@ button:disabled { background: #a5b4fc; cursor: not-allowed; }
 }
 
 .error { color: #ef4444; margin-top: 10px; }
+
+.success { color: #16a34a; margin-top: 10px; }
+
+input[type="file"] {
+    border: 2px dashed #667eea;
+    padding: 12px;
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    background: #f8faff;
+}
