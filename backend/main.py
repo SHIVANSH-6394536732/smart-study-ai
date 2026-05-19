@@ -23,15 +23,26 @@ def home():
 
 @app.get("/study")
 def study(topic: str):
-    topic = topic.lower()
-    plans = {
-        "ai": {"difficulty": "Medium", "tasks": ["Revise BFS", "Revise DFS", "Solve 2 problems"]},
-        "dbms": {"difficulty": "Easy", "tasks": ["Normalization", "SQL Queries", "Transactions"]},
-        "react": {"difficulty": "Medium", "tasks": ["useState", "Props", "Components"]}
-    }
-    if topic in plans:
-        return {"topic": topic, **plans[topic]}
-    return {"topic": topic, "difficulty": "Custom", "tasks": [f"Study {topic} basics"]}
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "You are a study planner AI. When given a topic, respond in this exact JSON format only, no extra text: {\"topic\": \"topic name\", \"difficulty\": \"Easy/Medium/Hard\", \"tasks\": [\"task1\", \"task2\", \"task3\", \"task4\", \"task5\"]}"},
+                {"role": "user", "content": f"Create a study plan for: {topic}"}
+            ]
+        )
+        import json
+        text = response.choices[0].message.content
+        plan = json.loads(text)
+        return plan
+    except Exception as e:
+        return {
+            "topic": topic,
+            "difficulty": "Custom",
+            "tasks": [f"Study {topic} basics", f"Practice {topic} problems", f"Revise {topic} concepts"]
+        }
+
+
 
 @app.get("/ask")
 def ask_ai(question: str):
@@ -76,3 +87,33 @@ def ask_pdf(question: str):
         return {"answer": response.choices[0].message.content}
     except Exception as e:
         return {"answer": f"Error: {str(e)}"}
+
+
+
+@app.get("/generate-quiz")
+def generate_quiz():
+    if "current" not in pdf_text_store:
+        return {"error": "No PDF uploaded yet. Please upload a PDF first."}
+    try:
+        context = pdf_text_store["current"][:3000]
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": """You are a quiz generator. Generate exactly 5 MCQ questions based on the notes provided.
+Return ONLY a JSON array, no extra text, in this exact format:
+[
+  {
+    "question": "Question here?",
+    "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
+    "answer": "A) option1"
+  }
+]"""},
+                {"role": "user", "content": f"Generate quiz from these notes:\n{context}"}
+            ]
+        )
+        import json
+        text = response.choices[0].message.content
+        quiz = json.loads(text)
+        return {"quiz": quiz}
+    except Exception as e:
+        return {"error": str(e)}
