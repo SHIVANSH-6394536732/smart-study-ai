@@ -1,7 +1,9 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
-import fitz  # pymupdf
+import fitz
+import random
+import json
 
 app = FastAPI()
 
@@ -15,7 +17,7 @@ app.add_middleware(
 
 groq_client = Groq(api_key="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")
 
-pdf_text_store = {}  # stores extracted PDF text in memory
+pdf_text_store = {}
 
 @app.get("/")
 def home():
@@ -31,7 +33,6 @@ def study(topic: str):
                 {"role": "user", "content": f"Create a study plan for: {topic}"}
             ]
         )
-        import json
         text = response.choices[0].message.content
         plan = json.loads(text)
         return plan
@@ -41,8 +42,6 @@ def study(topic: str):
             "difficulty": "Custom",
             "tasks": [f"Study {topic} basics", f"Practice {topic} problems", f"Revise {topic} concepts"]
         }
-
-
 
 @app.get("/ask")
 def ask_ai(question: str):
@@ -76,7 +75,7 @@ def ask_pdf(question: str):
     if "current" not in pdf_text_store:
         return {"answer": "No PDF uploaded yet. Please upload a PDF first."}
     try:
-        context = pdf_text_store["current"][:3000]  # first 3000 chars to stay within token limit
+        context = pdf_text_store["current"][:3000]
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -88,12 +87,10 @@ def ask_pdf(question: str):
     except Exception as e:
         return {"answer": f"Error: {str(e)}"}
 
-
-
 @app.get("/generate-quiz")
 def generate_quiz():
-    if "current" not in pdf_text_store:
-        return {"error": "No PDF uploaded yet. Please upload a PDF first."}
+    if "current" not in pdf_text_store or not pdf_text_store["current"].strip():
+        raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
     try:
         context = pdf_text_store["current"][:3000]
         response = groq_client.chat.completions.create(
@@ -111,9 +108,26 @@ Return ONLY a JSON array, no extra text, in this exact format:
                 {"role": "user", "content": f"Generate quiz from these notes:\n{context}"}
             ]
         )
-        import json
         text = response.choices[0].message.content
-        quiz = json.loads(text)
+        try:
+            quiz = json.loads(text)
+        except json.JSONDecodeError:
+            return {
+                "quiz": [{
+                    "question": "Could not parse quiz. Please try again.",
+                    "options": ["A) Try again", "B) Re-upload PDF", "C) Check notes", "D) Contact support"],
+                    "answer": "A) Try again"
+                }]
+            }
+
+        for item in quiz:
+            correct = item["answer"]
+            random.shuffle(item["options"])
+            item["answer"] = correct
+
         return {"quiz": quiz}
+
+    except HTTPException:
+        raise
     except Exception as e:
         return {"error": str(e)}
