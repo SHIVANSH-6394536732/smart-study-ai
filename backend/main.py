@@ -131,3 +131,42 @@ Return ONLY a JSON array, no extra text, in this exact format:
         raise
     except Exception as e:
         return {"error": str(e)}
+
+
+
+
+@app.get("/generate-flashcards")
+def generate_flashcards():
+    if "current" not in pdf_text_store or not pdf_text_store["current"].strip():
+        raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
+    try:
+        context = pdf_text_store["current"][:3000]
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": """You are a flashcard generator. Generate exactly 5 flashcards based on the notes provided.
+Return ONLY a JSON array, no extra text, in this exact format:
+[
+  {
+    "question": "Term or concept here?",
+    "answer": "Clear concise answer here."
+  }
+]"""},
+                {"role": "user", "content": f"Generate flashcards from these notes:\n{context}"}
+            ]
+        )
+        text = response.choices[0].message.content
+        try:
+            flashcards = json.loads(text)
+        except json.JSONDecodeError:
+            return {
+                "flashcards": [{
+                    "question": "Could not parse flashcards.",
+                    "answer": "Please try again."
+                }]
+            }
+        return {"flashcards": flashcards}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"error": str(e)}
