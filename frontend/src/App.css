@@ -12,8 +12,6 @@ body {
   text-align: center;
 }
 
-h1 { color: white; font-size: 2.5rem; margin-bottom: 4px; }
-.subtitle { color: rgba(255,255,255,0.85); margin-bottom: 30px; }
 
 .card {
   background: white;
@@ -179,4 +177,51 @@ button:disabled { background: #a5b4fc; cursor: not-allowed; }
   .App {
       padding: 0 8px;
   }
+}
+
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  padding: 14px 24px;
+  border-radius: 14px;
+  margin-bottom: 24px;
+}
+
+.navbar-brand {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-link {
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.nav-link:hover {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.nav-link.active {
+  background: white;
+  color: #667eea;
+  font-weight: bold;
+}
+
+.page-content {
+  padding-top: 8px;
 }

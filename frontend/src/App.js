@@ -1,17 +1,21 @@
 import "./App.css";
-import { StudyPlanCard, AskAICard, PDFUploadCard, QuizCard, FlashcardCard } from "./components";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Navbar } from "./components";
+import { Home, Notes } from "./pages";
 
 function App() {
     return (
-        <div className="App">
-            <h1>🎓 Smart Study AI</h1>
-            <p className="subtitle">Your personal AI-powered study planner</p>
-            <StudyPlanCard />
-            <AskAICard />
-            <PDFUploadCard />
-            <QuizCard />
-            <FlashcardCard />
-        </div>
+        <BrowserRouter>
+            <div className="App">
+                <Navbar />
+                <div className="page-content">
+                    <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/notes" element={<Notes />} />
+                    </Routes>
+                </div>
+            </div>
+        </BrowserRouter>
     );
 }
 
