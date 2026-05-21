@@ -161,3 +161,22 @@ button:disabled { background: #a5b4fc; cursor: not-allowed; }
   color: #166534;
   transform: rotateY(180deg);
 }
+
+.flashcard:hover {
+  transform: scale(1.03);
+  transition: transform 0.2s;
+}
+
+@media (max-width: 600px) {
+  .flashcards-grid {
+      grid-template-columns: 1fr;
+  }
+
+  .flashcard {
+      height: 180px;
+  }
+
+  .App {
+      padding: 0 8px;
+  }
+}
