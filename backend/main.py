@@ -10,6 +10,12 @@ from pydantic import BaseModel
 from database import get_db, User
 from auth import hash_password, verify_password, create_access_token, decode_token
 
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+groq_client = Groq(api_key=os.getenv("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"))
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
