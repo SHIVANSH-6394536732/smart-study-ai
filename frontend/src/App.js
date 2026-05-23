@@ -1,19 +1,28 @@
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Navbar } from "./components";
-import { Home, Notes } from "./pages";
+import { Navbar, ErrorBoundary, ProtectedRoute } from "./components";
+import { Home, Notes, Login } from "./pages";
 
 function App() {
     return (
         <BrowserRouter>
             <div className="App">
-                <Navbar />
-                <div className="page-content">
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/notes" element={<Notes />} />
-                    </Routes>
-                </div>
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/*" element={
+                        <ProtectedRoute>
+                            <Navbar />
+                            <ErrorBoundary>
+                                <div className="page-content">
+                                    <Routes>
+                                        <Route path="/" element={<Home />} />
+                                        <Route path="/notes" element={<Notes />} />
+                                    </Routes>
+                                </div>
+                            </ErrorBoundary>
+                        </ProtectedRoute>
+                    } />
+                </Routes>
             </div>
         </BrowserRouter>
     );

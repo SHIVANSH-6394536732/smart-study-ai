@@ -4,6 +4,19 @@ from groq import Groq
 import fitz
 import random
 import json
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from pydantic import BaseModel
+from database import get_db, User
+from auth import hash_password, verify_password, create_access_token, decode_token
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 app = FastAPI()
 
@@ -22,6 +35,31 @@ pdf_text_store = {}
 @app.get("/")
 def home():
     return {"message": "Smart Study AI Backend Running"}
+
+@app.post("/register")
+def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.username == req.username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    user = User(username=req.username, hashed_password=hash_password(req.password))
+    db.add(user)
+    db.commit()
+    return {"message": "User registered successfully"}
+
+@app.post("/login")
+def login(req: LoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == req.username).first()
+    if not user or not verify_password(req.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_access_token({"sub": user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.get("/me")
+def get_me(token: str):
+    username = decode_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return {"username": username}
 
 @app.get("/study")
 def study(topic: str):
