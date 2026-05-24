@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
@@ -10,12 +14,8 @@ from pydantic import BaseModel
 from database import get_db, User
 from auth import hash_password, verify_password, create_access_token, decode_token
 
-from dotenv import load_dotenv
-import os
-load_dotenv()
 
-groq_client = Groq(api_key=os.getenv("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"))
-
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 class RegisterRequest(BaseModel):
     username: str
     password: str
@@ -34,7 +34,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-groq_client = Groq(api_key="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")
 
 pdf_text_store = {}
 
