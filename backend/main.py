@@ -41,6 +41,12 @@ pdf_text_store = {}
 def home():
     return {"message": "Smart Study AI Backend Running"}
 
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
+
+    
+
 @app.post("/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.username == req.username).first()
