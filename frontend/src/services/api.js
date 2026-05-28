@@ -46,10 +46,13 @@ export const fetchGenerateFlashcards = async () => {
     }
     return res.json();
 };
+
+
 export const registerUser = async (username, password) => {
     const res = await fetch(`${BASE_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ username, password })
     });
     if (!res.ok) {
@@ -59,15 +62,33 @@ export const registerUser = async (username, password) => {
     return res.json();
 };
 
+
+
 export const loginUser = async (username, password) => {
     const res = await fetch(`${BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ username, password })
     });
     if (!res.ok) {
         const err = await res.json();
         throw new Error(err.detail);
     }
+    return res.json();
+};
+
+export const logoutUser = async () => {
+    await fetch(`${BASE_URL}/logout`, {
+        method: "POST",
+        credentials: "include"
+    });
+};
+
+export const getMe = async () => {
+    const res = await fetch(`${BASE_URL}/me`, {
+        credentials: "include"
+    });
+    if (!res.ok) throw new Error("Not authenticated");
     return res.json();
 };

@@ -21,8 +21,7 @@ function Login() {
                 setError("✅ Registered! Please login.");
             } else {
                 const data = await loginUser(username, password);
-                localStorage.setItem("token", data.access_token);
-                localStorage.setItem("username", username);
+                localStorage.setItem("username", data.username);
                 navigate("/");
             }
         } catch (err) {

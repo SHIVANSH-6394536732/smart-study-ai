@@ -13,6 +13,8 @@ from fastapi import Depends
 from pydantic import BaseModel
 from database import get_db, User
 from auth import hash_password, verify_password, create_access_token, decode_token
+from fastapi import Response, Request
+
 
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -45,7 +47,7 @@ def home():
 def ping():
     return {"status": "ok"}
 
-    
+
 
 @app.post("/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
@@ -57,13 +59,73 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "User registered successfully"}
 
+
 @app.post("/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == req.username).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token({"sub": user.username})
-    return {"access_token": token, "token_type": "bearer"}
+    
+    access_token = create_access_token({"sub": user.username})
+    refresh_token = create_refresh_token({"sub": user.username})
+    
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=1800
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=604800
+    )
+    return {"message": "Login successful", "username": user.username}
+
+
+@app.post("/logout")
+def logout(response: Response):
+    response.delete_cookie("access_token", samesite="none", secure=True)
+    response.delete_cookie("refresh_token", samesite="none", secure=True)
+    return {"message": "Logged out"}
+
+@app.post("/refresh")
+def refresh(request: Request, response: Response):
+    token = request.cookies.get("refresh_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="No refresh token")
+    username = decode_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    new_access_token = create_access_token({"sub": username})
+    response.set_cookie(
+        key="access_token",
+        value=new_access_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=1800
+    )
+    return {"message": "Token refreshed", "username": username}
+
+@app.get("/me")
+def get_me(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    username = decode_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return {"username": username}
+
+
+
+    
 
 @app.get("/me")
 def get_me(token: str):

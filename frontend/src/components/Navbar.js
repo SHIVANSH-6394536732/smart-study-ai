@@ -1,12 +1,14 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { logoutUser } from "../services/api";
+
 
 function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
     const username = localStorage.getItem("username");
 
-    const logout = () => {
-        localStorage.removeItem("token");
+    const logout = async () => {
+        await logoutUser();
         localStorage.removeItem("username");
         navigate("/login");
     };
