@@ -2,22 +2,19 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Response, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
 import fitz
 import random
 import json
 from sqlalchemy.orm import Session
-from fastapi import Depends
 from pydantic import BaseModel
 from database import get_db, User
-from auth import hash_password, verify_password, create_access_token, decode_token
-from fastapi import Response, Request
-
-
+from auth import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
 class RegisterRequest(BaseModel):
     username: str
     password: str
@@ -30,12 +27,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://smart-study-ai-five.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 pdf_text_store = {}
 
@@ -47,8 +43,6 @@ def home():
 def ping():
     return {"status": "ok"}
 
-
-
 @app.post("/register")
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.username == req.username).first()
@@ -59,16 +53,13 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "User registered successfully"}
 
-
 @app.post("/login")
 def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == req.username).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
     access_token = create_access_token({"sub": user.username})
     refresh_token = create_refresh_token({"sub": user.username})
-    
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -86,7 +77,6 @@ def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
         max_age=604800
     )
     return {"message": "Login successful", "username": user.username}
-
 
 @app.post("/logout")
 def logout(response: Response):
@@ -118,17 +108,6 @@ def get_me(request: Request):
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    username = decode_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return {"username": username}
-
-
-
-    
-
-@app.get("/me")
-def get_me(token: str):
     username = decode_token(token)
     if not username:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -230,21 +209,15 @@ Return ONLY a JSON array, no extra text, in this exact format:
                     "answer": "A) Try again"
                 }]
             }
-
         for item in quiz:
             correct = item["answer"]
             random.shuffle(item["options"])
             item["answer"] = correct
-
         return {"quiz": quiz}
-
     except HTTPException:
         raise
     except Exception as e:
         return {"error": str(e)}
-
-
-
 
 @app.get("/generate-flashcards")
 def generate_flashcards():
