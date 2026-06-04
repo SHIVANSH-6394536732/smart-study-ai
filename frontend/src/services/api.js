@@ -94,7 +94,8 @@ export const getMe = async () => {
 };
 
 export const saveStudyPlan = async (topic, difficulty, tasks) => {
-    const res = await fetch(`${BASE_URL}/save-study-plan?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}&tasks=${encodeURIComponent(tasks)}`, {
+    const username = localStorage.getItem("username");
+    const res = await fetch(`${BASE_URL}/save-study-plan?username=${username}&topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}&tasks=${encodeURIComponent(tasks)}`, {
         method: "POST",
         credentials: "include"
     });
@@ -103,7 +104,8 @@ export const saveStudyPlan = async (topic, difficulty, tasks) => {
 };
 
 export const saveQuizScore = async (score, total) => {
-    const res = await fetch(`${BASE_URL}/save-quiz-score?score=${score}&total=${total}`, {
+    const username = localStorage.getItem("username");
+    const res = await fetch(`${BASE_URL}/save-quiz-score?username=${username}&score=${score}&total=${total}`, {
         method: "POST",
         credentials: "include"
     });

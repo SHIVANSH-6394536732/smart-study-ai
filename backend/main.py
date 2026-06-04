@@ -256,28 +256,15 @@ Return ONLY a JSON array, no extra text, in this exact format:
         return {"error": str(e)}
 
 
-
 @app.post("/save-study-plan")
-def save_study_plan(request: Request, topic: str, difficulty: str, tasks: str, db: Session = Depends(get_db)):
-    token = request.cookies.get("access_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    username = decode_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
+def save_study_plan(username: str, topic: str, difficulty: str, tasks: str, db: Session = Depends(get_db)):
     plan = StudyPlan(username=username, topic=topic, difficulty=difficulty, tasks=tasks)
     db.add(plan)
     db.commit()
     return {"message": "Study plan saved"}
 
 @app.post("/save-quiz-score")
-def save_quiz_score(request: Request, score: int, total: int, db: Session = Depends(get_db)):
-    token = request.cookies.get("access_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    username = decode_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
+def save_quiz_score(username: str, score: int, total: int, db: Session = Depends(get_db)):
     result = QuizScore(username=username, score=score, total=total)
     db.add(result)
     db.commit()
