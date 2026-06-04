@@ -259,7 +259,7 @@ Return ONLY a JSON array, no extra text, in this exact format:
 
 @app.post("/save-study-plan")
 def save_study_plan(request: Request, topic: str, difficulty: str, tasks: str, db: Session = Depends(get_db)):
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("access_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     username = decode_token(token)
@@ -272,7 +272,7 @@ def save_study_plan(request: Request, topic: str, difficulty: str, tasks: str, d
 
 @app.post("/save-quiz-score")
 def save_quiz_score(request: Request, score: int, total: int, db: Session = Depends(get_db)):
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("access_token") or request.headers.get("Authorization", "").replace("Bearer ", "")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     username = decode_token(token)
@@ -284,13 +284,7 @@ def save_quiz_score(request: Request, score: int, total: int, db: Session = Depe
     return {"message": "Quiz score saved"}
 
 @app.get("/dashboard")
-def get_dashboard(request: Request, db: Session = Depends(get_db)):
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    username = decode_token(token)
-    if not username:
-        raise HTTPException(status_code=401, detail="Invalid token")
+def get_dashboard(username: str, db: Session = Depends(get_db)):
     plans = db.query(StudyPlan).filter(StudyPlan.username == username).order_by(StudyPlan.created_at.desc()).limit(10).all()
     scores = db.query(QuizScore).filter(QuizScore.username == username).order_by(QuizScore.created_at.desc()).limit(10).all()
     return {

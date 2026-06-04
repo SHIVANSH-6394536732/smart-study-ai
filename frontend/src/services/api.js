@@ -112,7 +112,8 @@ export const saveQuizScore = async (score, total) => {
 };
 
 export const fetchDashboard = async () => {
-    const res = await fetch(`${BASE_URL}/dashboard`, {
+    const username = localStorage.getItem("username");
+    const res = await fetch(`${BASE_URL}/dashboard?username=${username}`, {
         credentials: "include"
     });
     if (!res.ok) throw new Error("Failed to fetch dashboard");
