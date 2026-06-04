@@ -92,3 +92,29 @@ export const getMe = async () => {
     if (!res.ok) throw new Error("Not authenticated");
     return res.json();
 };
+
+export const saveStudyPlan = async (topic, difficulty, tasks) => {
+    const res = await fetch(`${BASE_URL}/save-study-plan?topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}&tasks=${encodeURIComponent(tasks)}`, {
+        method: "POST",
+        credentials: "include"
+    });
+    if (!res.ok) throw new Error("Failed to save study plan");
+    return res.json();
+};
+
+export const saveQuizScore = async (score, total) => {
+    const res = await fetch(`${BASE_URL}/save-quiz-score?score=${score}&total=${total}`, {
+        method: "POST",
+        credentials: "include"
+    });
+    if (!res.ok) throw new Error("Failed to save quiz score");
+    return res.json();
+};
+
+export const fetchDashboard = async () => {
+    const res = await fetch(`${BASE_URL}/dashboard`, {
+        credentials: "include"
+    });
+    if (!res.ok) throw new Error("Failed to fetch dashboard");
+    return res.json();
+};

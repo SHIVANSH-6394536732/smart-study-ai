@@ -10,7 +10,7 @@ import random
 import json
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database import get_db, User
+from database import get_db, User, StudyPlan, QuizScore
 from auth import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -254,3 +254,46 @@ Return ONLY a JSON array, no extra text, in this exact format:
         raise
     except Exception as e:
         return {"error": str(e)}
+
+
+
+@app.post("/save-study-plan")
+def save_study_plan(request: Request, topic: str, difficulty: str, tasks: str, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    username = decode_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    plan = StudyPlan(username=username, topic=topic, difficulty=difficulty, tasks=tasks)
+    db.add(plan)
+    db.commit()
+    return {"message": "Study plan saved"}
+
+@app.post("/save-quiz-score")
+def save_quiz_score(request: Request, score: int, total: int, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    username = decode_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    result = QuizScore(username=username, score=score, total=total)
+    db.add(result)
+    db.commit()
+    return {"message": "Quiz score saved"}
+
+@app.get("/dashboard")
+def get_dashboard(request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    username = decode_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    plans = db.query(StudyPlan).filter(StudyPlan.username == username).order_by(StudyPlan.created_at.desc()).limit(10).all()
+    scores = db.query(QuizScore).filter(QuizScore.username == username).order_by(QuizScore.created_at.desc()).limit(10).all()
+    return {
+        "study_plans": [{"topic": p.topic, "difficulty": p.difficulty, "tasks": p.tasks, "created_at": str(p.created_at)} for p in plans],
+        "quiz_scores": [{"score": s.score, "total": s.total, "created_at": str(s.created_at)} for s in scores]
+    }

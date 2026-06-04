@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fetchStudyPlan } from "../services/api";
+import { fetchStudyPlan, saveStudyPlan } from "../services/api";
 
 function StudyPlanCard() {
     const [topic, setTopic] = useState("");
@@ -16,6 +16,11 @@ function StudyPlanCard() {
             const data = await fetchStudyPlan(topic);
             setStudyPlan(data);
             setHistory((prev) => [topic, ...prev]);
+            try {
+                await saveStudyPlan(data.topic, data.difficulty, JSON.stringify(data.tasks));
+            } catch {
+                // silent fail
+            }
         } catch {
             setError("⚠️ Could not connect to backend. Is FastAPI running?");
         } finally {

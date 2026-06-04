@@ -1,7 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/api";
 
-
 function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -22,6 +21,9 @@ function Navbar() {
                 </Link>
                 <Link to="/notes" className={location.pathname === "/notes" ? "nav-link active" : "nav-link"}>
                     📄 Notes & Quiz
+                </Link>
+                <Link to="/dashboard" className={location.pathname === "/dashboard" ? "nav-link active" : "nav-link"}>
+                    📊 Dashboard
                 </Link>
                 {username && <span style={{color: "white", fontSize: "14px", padding: "8px"}}>👤 {username}</span>}
                 <button onClick={logout} style={{padding: "8px 16px", fontSize: "14px"}}>Logout</button>
