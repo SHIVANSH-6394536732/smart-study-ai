@@ -16,8 +16,8 @@ function App() {
                                 <div className="page-content">
                                     <Routes>
                                     <Route path="/" element={<Home />} />
-                                    <Route path="/notes" element={<Notes />} />
-                                    <Route path="/dashboard" element={<Dashboard />} />
+                                    <Route path="notes" element={<Notes />} />
+  <Route path="dashboard" element={<Dashboard />} />
                                     </Routes>
                                 </div>
                             </ErrorBoundary>
