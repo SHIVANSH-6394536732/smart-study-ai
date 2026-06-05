@@ -2,11 +2,14 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Navbar, ErrorBoundary, ProtectedRoute } from "./components";
 import { Home, Notes, Login, Dashboard } from "./pages";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
     return (
         <BrowserRouter>
             <div className="App">
+                <ToastContainer position="top-right" autoClose={3000} />
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/*" element={

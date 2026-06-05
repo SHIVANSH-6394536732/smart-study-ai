@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { fetchGenerateQuiz, saveQuizScore } from "../services/api";
+import { toast } from "react-toastify";
 
 function QuizCard() {
     const [quiz, setQuiz] = useState([]);
@@ -31,11 +32,12 @@ function QuizCard() {
 
     const submitQuiz = async () => {
         if (Object.keys(selectedAnswers).length < quiz.length) {
-            alert("Please answer all questions before submitting.");
+            toast.warning("Please answer all questions before submitting.");
             return;
         }
         setQuizSubmitted(true);
         const score = quiz.filter((q, i) => selectedAnswers[i] === q.answer).length;
+        toast.info(`Quiz submitted! Score: ${score}/${quiz.length}`);
         try {
             await saveQuizScore(score, quiz.length);
         } catch {

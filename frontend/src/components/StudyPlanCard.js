@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { fetchStudyPlan, saveStudyPlan } from "../services/api";
+import { toast } from "react-toastify";
 
 function StudyPlanCard() {
     const [topic, setTopic] = useState("");
@@ -15,6 +16,7 @@ function StudyPlanCard() {
             setError("");
             const data = await fetchStudyPlan(topic);
             setStudyPlan(data);
+            toast.success(`Study plan for ${data.topic} ready!`);
             setHistory((prev) => [topic, ...prev]);
             try {
                 await saveStudyPlan(data.topic, data.difficulty, JSON.stringify(data.tasks));
@@ -23,6 +25,7 @@ function StudyPlanCard() {
             }
         } catch {
             setError("⚠️ Could not connect to backend. Is FastAPI running?");
+            toast.error("Could not generate study plan.");
         } finally {
             setLoading(false);
         }

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { fetchUploadPDF, fetchAskPDF } from "../services/api";
+import { toast } from "react-toastify";
 
 function PDFUploadCard() {
     const [pdfFile, setPdfFile] = useState(null);
@@ -7,25 +8,31 @@ function PDFUploadCard() {
     const [pdfQuestion, setPdfQuestion] = useState("");
     const [pdfAnswer, setPdfAnswer] = useState("");
     const [pdfLoading, setPdfLoading] = useState(false);
+    const [uploadLoading, setUploadLoading] = useState(false);
 
     const uploadPDF = async () => {
         if (!pdfFile) return;
         try {
+            setUploadLoading(true);
             const data = await fetchUploadPDF(pdfFile);
             setPdfStatus(`✅ Uploaded! Pages: ${data.pages}`);
+            toast.success(`PDF uploaded! ${data.pages} pages, ${data.chunks} chunks ready.`);
         } catch {
-            setPdfStatus("❌ Upload failed.");
+            toast.error("Upload failed. Please try again.");
+        } finally {
+            setUploadLoading(false);
         }
     };
-    
+
     const askPDF = async () => {
         if (!pdfQuestion.trim()) return;
         try {
             setPdfLoading(true);
+            setPdfAnswer("");
             const data = await fetchAskPDF(pdfQuestion);
             setPdfAnswer(data.answer);
         } catch {
-            setPdfAnswer("❌ Could not reach backend.");
+            toast.error("Could not reach backend.");
         } finally {
             setPdfLoading(false);
         }
@@ -40,7 +47,9 @@ function PDFUploadCard() {
                 onChange={(e) => setPdfFile(e.target.files[0])}
             />
             <div className="button-row">
-                <button onClick={uploadPDF}>Upload PDF</button>
+                <button onClick={uploadPDF} disabled={uploadLoading}>
+                    {uploadLoading ? "Uploading..." : "Upload PDF"}
+                </button>
             </div>
             {pdfStatus && <p className="success">{pdfStatus}</p>}
             <input
