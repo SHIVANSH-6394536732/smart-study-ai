@@ -5,6 +5,8 @@ load_dotenv()
 from fastapi import FastAPI, UploadFile, File, HTTPException, Response, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
+import cohere
+import numpy as np
 import fitz
 import random
 import json
@@ -14,6 +16,14 @@ from database import get_db, User, StudyPlan, QuizScore
 from auth import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+cohere_client = cohere.Client(os.getenv("COHERE_API_KEY"))
+
+pdf_text_store = {}
+pdf_store = {
+    "chunks": [],
+    "embeddings": []
+}
+
 
 class RegisterRequest(BaseModel):
     username: str
