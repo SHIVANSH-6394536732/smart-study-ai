@@ -18,12 +18,10 @@ from auth import hash_password, verify_password, create_access_token, create_ref
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 cohere_client = cohere.Client(os.getenv("COHERE_API_KEY"))
 
-pdf_text_store = {}
 pdf_store = {
     "chunks": [],
     "embeddings": []
 }
-
 
 class RegisterRequest(BaseModel):
     username: str
@@ -43,13 +41,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-pdf_text_store = {}
-
 @app.get("/")
 def home():
     return {"message": "Smart Study AI Backend Running"}
 
-@app.get("/ping")
+@app.api_route("/ping", methods=["GET", "HEAD"])
 def ping():
     return {"status": "ok"}
 
@@ -166,10 +162,6 @@ async def upload_pdf(file: UploadFile = File(...)):
         for page in doc:
             text += page.get_text()
 
-        # keep old store working
-        pdf_text_store["current"] = text
-
-        # chunking
         chunk_size = 900
         overlap = 175
         chunks = []
@@ -179,7 +171,6 @@ async def upload_pdf(file: UploadFile = File(...)):
             chunks.append(text[start:end])
             start += chunk_size - overlap
 
-        # batch embed all chunks in one API call
         response = cohere_client.embed(
             texts=chunks,
             model="embed-english-v3.0",
@@ -199,7 +190,6 @@ def ask_pdf(question: str):
     if not pdf_store["chunks"]:
         return {"answer": "No PDF uploaded yet. Please upload a PDF first."}
     try:
-        # embed the question
         q_response = cohere_client.embed(
             texts=[question],
             model="embed-english-v3.0",
@@ -207,13 +197,11 @@ def ask_pdf(question: str):
         )
         q_embedding = np.array(q_response.embeddings[0])
 
-        # cosine similarity against all chunks
         similarities = []
         for emb in pdf_store["embeddings"]:
             sim = np.dot(q_embedding, emb) / (np.linalg.norm(q_embedding) * np.linalg.norm(emb))
             similarities.append(sim)
 
-        # get top 3 chunks
         top_indices = np.argsort(similarities)[-3:][::-1]
         context = "\n\n".join([pdf_store["chunks"][i] for i in top_indices])
 
@@ -230,10 +218,10 @@ def ask_pdf(question: str):
 
 @app.get("/generate-quiz")
 def generate_quiz():
-    if "current" not in pdf_text_store or not pdf_text_store["current"].strip():
+    if not pdf_store["chunks"]:
         raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
     try:
-        context = pdf_text_store["current"][:3000]
+        context = " ".join(pdf_store["chunks"][:4])
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -272,10 +260,10 @@ Return ONLY a JSON array, no extra text, in this exact format:
 
 @app.get("/generate-flashcards")
 def generate_flashcards():
-    if "current" not in pdf_text_store or not pdf_text_store["current"].strip():
+    if not pdf_store["chunks"]:
         raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
     try:
-        context = pdf_text_store["current"][:3000]
+        context = " ".join(pdf_store["chunks"][:4])
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -305,7 +293,6 @@ Return ONLY a JSON array, no extra text, in this exact format:
         raise
     except Exception as e:
         return {"error": str(e)}
-
 
 @app.post("/save-study-plan")
 def save_study_plan(username: str, topic: str, difficulty: str, tasks: str, db: Session = Depends(get_db)):
