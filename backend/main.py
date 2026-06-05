@@ -196,10 +196,27 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 @app.get("/ask-pdf")
 def ask_pdf(question: str):
-    if "current" not in pdf_text_store:
+    if not pdf_store["chunks"]:
         return {"answer": "No PDF uploaded yet. Please upload a PDF first."}
     try:
-        context = pdf_text_store["current"][:3000]
+        # embed the question
+        q_response = cohere_client.embed(
+            texts=[question],
+            model="embed-english-v3.0",
+            input_type="search_query"
+        )
+        q_embedding = np.array(q_response.embeddings[0])
+
+        # cosine similarity against all chunks
+        similarities = []
+        for emb in pdf_store["embeddings"]:
+            sim = np.dot(q_embedding, emb) / (np.linalg.norm(q_embedding) * np.linalg.norm(emb))
+            similarities.append(sim)
+
+        # get top 3 chunks
+        top_indices = np.argsort(similarities)[-3:][::-1]
+        context = "\n\n".join([pdf_store["chunks"][i] for i in top_indices])
+
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
