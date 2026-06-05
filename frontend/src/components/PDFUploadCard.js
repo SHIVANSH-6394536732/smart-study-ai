@@ -9,6 +9,23 @@ function PDFUploadCard() {
     const [pdfAnswer, setPdfAnswer] = useState("");
     const [pdfLoading, setPdfLoading] = useState(false);
     const [uploadLoading, setUploadLoading] = useState(false);
+    const [dragging, setDragging] = useState(false);
+
+    const handleFile = (file) => {
+        if (file && file.type === "application/pdf") {
+            setPdfFile(file);
+            toast.info(`Selected: ${file.name}`);
+        } else {
+            toast.error("Please select a valid PDF file.");
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setDragging(false);
+        const file = e.dataTransfer.files[0];
+        handleFile(file);
+    };
 
     const uploadPDF = async () => {
         if (!pdfFile) return;
@@ -41,13 +58,38 @@ function PDFUploadCard() {
     return (
         <div className="card">
             <h2>📄 Ask from Your Notes</h2>
+
+            <div
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("pdf-input").click()}
+                style={{
+                    border: `2px dashed ${dragging ? "#4f46e5" : "#cbd5e1"}`,
+                    borderRadius: "10px",
+                    padding: "24px",
+                    textAlign: "center",
+                    cursor: "pointer",
+                    background: dragging ? "#ede9fe" : "#f8faff",
+                    marginBottom: "12px",
+                    transition: "all 0.2s"
+                }}
+            >
+                <p style={{ color: "#6b7280", margin: 0 }}>
+                    {pdfFile ? `📄 ${pdfFile.name}` : "🖱️ Drag & drop a PDF here, or click to select"}
+                </p>
+            </div>
+
             <input
+                id="pdf-input"
                 type="file"
                 accept=".pdf"
-                onChange={(e) => setPdfFile(e.target.files[0])}
+                style={{ display: "none" }}
+                onChange={(e) => handleFile(e.target.files[0])}
             />
+
             <div className="button-row">
-                <button onClick={uploadPDF} disabled={uploadLoading}>
+                <button onClick={uploadPDF} disabled={uploadLoading || !pdfFile}>
                     {uploadLoading ? "Uploading..." : "Upload PDF"}
                 </button>
             </div>
