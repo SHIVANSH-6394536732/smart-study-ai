@@ -165,8 +165,32 @@ async def upload_pdf(file: UploadFile = File(...)):
         text = ""
         for page in doc:
             text += page.get_text()
+
+        # keep old store working
         pdf_text_store["current"] = text
-        return {"message": "PDF uploaded successfully", "pages": doc.page_count}
+
+        # chunking
+        chunk_size = 900
+        overlap = 175
+        chunks = []
+        start = 0
+        while start < len(text):
+            end = start + chunk_size
+            chunks.append(text[start:end])
+            start += chunk_size - overlap
+
+        # batch embed all chunks in one API call
+        response = cohere_client.embed(
+            texts=chunks,
+            model="embed-english-v3.0",
+            input_type="search_document"
+        )
+        embeddings = [np.array(e) for e in response.embeddings]
+
+        pdf_store["chunks"] = chunks
+        pdf_store["embeddings"] = embeddings
+
+        return {"message": "PDF uploaded successfully", "pages": doc.page_count, "chunks": len(chunks)}
     except Exception as e:
         return {"error": str(e)}
 
