@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { fetchGenerateQuiz, saveQuizScore } from "../services/api";
 import { toast } from "react-toastify";
+import { jsPDF } from "jspdf";
+
 
 function QuizCard() {
     const [quiz, setQuiz] = useState([]);
@@ -43,6 +45,43 @@ function QuizCard() {
         } catch {
             // silent fail
         }
+    };
+    const downloadQuiz = () => {
+        const pdf = new jsPDF();
+        pdf.setFontSize(18);
+        pdf.setTextColor(79, 70, 229);
+        pdf.text("Smart Study AI — Quiz", 20, 20);
+        pdf.setFontSize(10);
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 20, 30);
+        pdf.setDrawColor(226, 232, 240);
+        pdf.line(20, 34, 190, 34);
+    
+        let y = 44;
+        quiz.forEach((q, qi) => {
+            pdf.setFontSize(11);
+            pdf.setTextColor(30, 27, 75);
+            const questionLines = pdf.splitTextToSize(`${qi + 1}. ${q.question}`, 170);
+            pdf.text(questionLines, 20, y);
+            y += questionLines.length * 7;
+    
+            q.options.forEach((option) => {
+                pdf.setFontSize(10);
+                pdf.setTextColor(55, 65, 81);
+                const optLines = pdf.splitTextToSize(`   ${option}`, 165);
+                pdf.text(optLines, 20, y);
+                y += optLines.length * 6;
+            });
+    
+            pdf.setTextColor(22, 163, 74);
+            pdf.text(`   ✓ Answer: ${q.answer}`, 20, y);
+            y += 10;
+    
+            if (y > 270) { pdf.addPage(); y = 20; }
+        });
+    
+        pdf.save("SmartStudyAI_Quiz.pdf");
+        toast.success("Quiz downloaded as PDF!");
     };
 
     return (
@@ -96,10 +135,16 @@ function QuizCard() {
                     {!quizSubmitted && (
                         <button onClick={submitQuiz}>Submit Quiz</button>
                     )}
+                    
                     {quizSubmitted && (
-                        <p style={{color: "#4f46e5", fontWeight: "bold"}}>
-                            Score: {quiz.filter((q, i) => selectedAnswers[i] === q.answer).length} / {quiz.length}
-                        </p>
+                        <div style={{display: "flex", gap: "10px", alignItems: "center", marginTop: "8px"}}>
+                            <p style={{color: "#4f46e5", fontWeight: "bold", margin: 0}}>
+                                Score: {quiz.filter((q, i) => selectedAnswers[i] === q.answer).length} / {quiz.length}
+                            </p>
+                            <button onClick={downloadQuiz} style={{background: "#10b981", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontSize: "14px"}}>
+                                ⬇️ Download Quiz PDF
+                            </button>
+                        </div>
                     )}
                 </div>
             )}
