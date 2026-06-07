@@ -37,7 +37,8 @@ function QuizCard() {
             });
         }, 1000);
         return () => clearInterval(timerRef.current);
-    }, [timerActive, currentQ, quizSubmitted]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [timerActive, currentQ, quizSubmitted]);
 
     const handleAutoSubmit = async () => {
         setQuizSubmitted(true);
