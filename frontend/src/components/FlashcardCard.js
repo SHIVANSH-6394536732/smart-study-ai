@@ -29,7 +29,8 @@ function FlashcardCard() {
                 setFlashcards(data.flashcards);
             }
         } catch {
-            setFlashcardError("❌ Network error. Is the backend running?");
+            setFlashcardError("❌ Could not generate flashcards. Please upload a PDF first and try again.");
+
         } finally {
             setFlashcardLoading(false);
         }

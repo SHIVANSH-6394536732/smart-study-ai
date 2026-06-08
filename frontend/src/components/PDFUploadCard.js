@@ -14,9 +14,11 @@ function PDFUploadCard() {
     const handleFile = (file) => {
         if (file && file.type === "application/pdf") {
             setPdfFile(file);
-            toast.info(`Selected: ${file.name}`);
+            setPdfStatus("");
+            setPdfAnswer("");
+            toast.info(`📄 Selected: ${file.name}`);
         } else {
-            toast.error("Please select a valid PDF file.");
+            toast.error("Please select a valid PDF file (.pdf only).");
         }
     };
 
@@ -34,8 +36,13 @@ function PDFUploadCard() {
             const data = await fetchUploadPDF(pdfFile);
             setPdfStatus(`✅ Uploaded! Pages: ${data.pages}`);
             toast.success(`PDF uploaded! ${data.pages} pages, ${data.chunks} chunks ready.`);
+            toast.warning(
+                "⚠️ PDF resets after 15 min of inactivity. Re-upload if answers stop working.",
+                { autoClose: 7000 }
+            );
         } catch {
-            toast.error("Upload failed. Please try again.");
+            toast.error("Upload failed. Please check your file and try again.");
+            setPdfStatus("");
         } finally {
             setUploadLoading(false);
         }
@@ -49,7 +56,8 @@ function PDFUploadCard() {
             const data = await fetchAskPDF(pdfQuestion);
             setPdfAnswer(data.answer);
         } catch {
-            toast.error("Could not reach backend.");
+            toast.error("Could not get answer. Please re-upload your PDF and try again.");
+
         } finally {
             setPdfLoading(false);
         }
@@ -60,25 +68,17 @@ function PDFUploadCard() {
             <h2>📄 Ask from Your Notes</h2>
 
             <div
-                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => document.getElementById("pdf-input").click()}
-                style={{
-                    border: `2px dashed ${dragging ? "#4f46e5" : "#cbd5e1"}`,
-                    borderRadius: "10px",
-                    padding: "24px",
-                    textAlign: "center",
-                    cursor: "pointer",
-                    background: dragging ? "#ede9fe" : "#f8faff",
-                    marginBottom: "12px",
-                    transition: "all 0.2s"
-                }}
-            >
-                <p style={{ color: "#6b7280", margin: 0 }}>
-                    {pdfFile ? `📄 ${pdfFile.name}` : "🖱️ Drag & drop a PDF here, or click to select"}
-                </p>
-            </div>
+                    onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                    onDragLeave={() => setDragging(false)}
+                    onDrop={handleDrop}
+                    onClick={() => document.getElementById("pdf-input").click()}
+                    className={`drag-zone ${dragging ? "dragging" : ""}`}
+                    style={{ marginBottom: "12px" }}
+                >
+                    <p style={{ margin: 0 }}>
+                        {pdfFile ? `📄 ${pdfFile.name}` : "🖱️ Drag & drop a PDF here, or click to select"}
+                    </p>
+                </div>
 
             <input
                 id="pdf-input"

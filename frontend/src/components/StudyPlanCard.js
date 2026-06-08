@@ -25,8 +25,8 @@ function StudyPlanCard() {
                 // silent fail
             }
         } catch {
-            setError("⚠️ Could not connect to backend. Is FastAPI running?");
-            toast.error("Could not generate study plan.");
+            setError("⚠️ Something went wrong. Please try again in a moment.");
+            toast.error("Could not generate study plan. Please try again.");
         } finally {
             setLoading(false);
         }

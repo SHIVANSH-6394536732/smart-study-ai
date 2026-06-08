@@ -62,7 +62,8 @@ function QuizCard() {
             setQuiz(data.quiz);
             setTimerActive(true);
         } catch (err) {
-            setQuizError(`❌ ${err.message}`);
+            setQuizError("❌ Could not generate quiz. Please upload a PDF first and try again.");
+
         } finally {
             setQuizLoading(false);
         }

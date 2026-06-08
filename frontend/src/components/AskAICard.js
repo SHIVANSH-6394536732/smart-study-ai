@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { fetchAskAI } from "../services/api";
 import { toast } from "react-toastify";
 
@@ -12,10 +12,17 @@ function AskAICard() {
     const [voiceEnabled, setVoiceEnabled] = useState(true);
     const recognitionRef = useRef(null);
 
+    useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast.warning("🎤 Voice input requires Chrome or Edge browser.", { autoClose: 8000 });
+        }
+    }, []);
+
     const startListening = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-            toast.error("Voice input not supported in this browser. Use Chrome.");
+            toast.error("Voice input not supported. Please use Chrome or Edge.");
             return;
         }
         const recognition = new SpeechRecognition();
@@ -28,12 +35,13 @@ function AskAICard() {
         recognition.onend = () => setListening(false);
         recognition.onerror = () => {
             setListening(false);
+            setQuestion("");
             toast.error("Voice input failed. Please try again.");
         };
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
             setQuestion(transcript);
-            toast.info(`Heard: "${transcript}"`);
+            toast.info(`🎤 Heard: "${transcript}"`);
         };
         recognition.start();
     };
@@ -50,10 +58,20 @@ function AskAICard() {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = "en-US";
-        utterance.rate = 1;
+        utterance.rate = 0.95;
         utterance.pitch = 1;
+        utterance.volume = 1;
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v =>
+            v.name.includes("Google") ||
+            v.name.includes("Natural") ||
+            v.name.includes("Samantha") ||
+            v.name.includes("Daniel")
+        );
+        if (preferred) utterance.voice = preferred;
         utterance.onstart = () => setSpeaking(true);
         utterance.onend = () => setSpeaking(false);
+        utterance.onerror = () => setSpeaking(false);
         window.speechSynthesis.speak(utterance);
     };
 
@@ -70,11 +88,11 @@ function AskAICard() {
             stopSpeaking();
             const data = await fetchAskAI(question);
             setAnswer(data.answer);
-            setQuestionHistory((prev) => [question, ...prev]);
+            setQuestionHistory((prev) => [question, ...prev.slice(0, 4)]);
             if (voiceEnabled) speakAnswer(data.answer);
         } catch {
-            setAnswer("⚠️ Could not reach backend.");
-            toast.error("Could not reach backend.");
+            setAnswer("⚠️ Something went wrong. Please try again.");
+            toast.error("Could not get an answer. Please try again.");
         } finally {
             setAskLoading(false);
         }
@@ -82,115 +100,181 @@ function AskAICard() {
 
     return (
         <div className="card">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "18px 22px 0 22px"
+            }}>
                 <h2 style={{ margin: 0 }}>🤖 Ask AI</h2>
                 <button
                     onClick={() => { setVoiceEnabled(!voiceEnabled); stopSpeaking(); }}
                     style={{
-                        background: voiceEnabled ? "#4f46e5" : "#e2e8f0",
-                        color: voiceEnabled ? "white" : "#6b7280",
-                        border: "none",
+                        background: voiceEnabled
+                            ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                            : "var(--glass-bg)",
+                        color: voiceEnabled ? "white" : "var(--text-secondary)",
+                        border: voiceEnabled ? "none" : "1px solid var(--glass-border)",
                         borderRadius: "20px",
                         padding: "6px 14px",
                         fontSize: "12px",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        fontWeight: "600",
+                        boxShadow: voiceEnabled ? "0 4px 12px rgba(99,102,241,0.3)" : "none"
                     }}
                 >
                     {voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off"}
                 </button>
             </div>
 
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <input
-                    type="text"
-                    placeholder="Ask a study question or press 🎤 to speak..."
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") askAI(); }}
-                    style={{ flex: 1 }}
-                />
-                <button
-                    onClick={listening ? stopListening : startListening}
-                    style={{
-                        background: listening ? "#ef4444" : "#4f46e5",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: "42px",
-                        height: "42px",
-                        fontSize: "18px",
-                        cursor: "pointer",
-                        animation: listening ? "pulse 1s infinite" : "none",
-                        flexShrink: 0
-                    }}
-                    title={listening ? "Stop listening" : "Start voice input"}
-                >
-                    {listening ? "⏹️" : "🎤"}
-                </button>
-            </div>
-
-            {listening && (
-                <p style={{ color: "#ef4444", fontSize: "13px", marginTop: "6px", animation: "pulse 1s infinite" }}>
-                    🔴 Listening... speak now
-                </p>
-            )}
-
-            <div className="button-row" style={{ marginTop: "10px" }}>
-                <button onClick={askAI} disabled={askLoading}>
-                    {askLoading ? "Thinking..." : "Ask"}
-                </button>
-                {speaking && (
-                    <button onClick={stopSpeaking} style={{ background: "#ef4444", color: "white" }}>
-                        ⏹ Stop Speaking
+            <div style={{ padding: "12px 22px 22px 22px" }}>
+                <div style={{
+                    display: "flex",
+                    gap: "8px",
+                    alignItems: "center",
+                    width: "100%"
+                }}>
+                    <input
+                        type="text"
+                        placeholder="Ask a study question or press 🎤 to speak..."
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") askAI(); }}
+                        style={{ flex: 1, minWidth: 0, marginTop: 0 }}
+                    />
+                    <button
+                        onClick={listening ? stopListening : startListening}
+                        style={{
+                            background: listening
+                                ? "linear-gradient(135deg, #ef4444, #dc2626)"
+                                : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: "44px",
+                            height: "44px",
+                            minWidth: "44px",
+                            fontSize: "18px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            boxShadow: listening
+                                ? "0 0 0 4px rgba(239,68,68,0.3)"
+                                : "0 4px 12px rgba(99,102,241,0.4)",
+                            animation: listening ? "pulse 1s infinite" : "none",
+                            padding: 0
+                        }}
+                        title={listening ? "Stop listening" : "Start voice input"}
+                    >
+                        {listening ? "⏹" : "🎤"}
                     </button>
+                </div>
+
+                {listening && (
+                    <p style={{
+                        color: "#ef4444",
+                        fontSize: "13px",
+                        marginTop: "8px",
+                        fontWeight: "600",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                    }}>
+                        <span style={{ animation: "pulse 1s infinite", display: "inline-block" }}>🔴</span>
+                        Listening... speak now
+                    </p>
+                )}
+
+                <div className="button-row">
+                    <button onClick={askAI} disabled={askLoading}>
+                        {askLoading ? "⏳ Thinking..." : "Ask"}
+                    </button>
+                    {speaking && (
+                        <button
+                            onClick={stopSpeaking}
+                            style={{
+                                background: "linear-gradient(135deg, #ef4444, #dc2626)"
+                            }}
+                        >
+                            ⏹ Stop Speaking
+                        </button>
+                    )}
+                </div>
+
+                {answer && (
+                    <div className="result-box">
+                        <div style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            gap: "8px"
+                        }}>
+                            <p style={{ margin: 0, flex: 1, lineHeight: "1.7" }}>{answer}</p>
+                            <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                                <button
+                                    onClick={() => speakAnswer(answer)}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        fontSize: "16px",
+                                        cursor: "pointer",
+                                        boxShadow: "none",
+                                        padding: "4px",
+                                        opacity: speaking ? 0.5 : 1,
+                                        color: "var(--text-secondary)"
+                                    }}
+                                    title="Read aloud"
+                                >
+                                    🔊
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setAnswer("");
+                                        setQuestion("");
+                                        stopSpeaking();
+                                    }}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        fontSize: "16px",
+                                        cursor: "pointer",
+                                        boxShadow: "none",
+                                        padding: "4px",
+                                        color: "var(--text-muted)"
+                                    }}
+                                    title="Clear"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {questionHistory.length > 0 && (
+                    <div className="history-box">
+                        <h4>🕘 Recent Questions</h4>
+                        <ul>
+                            {questionHistory.map((item, index) => (
+                                <li
+                                    key={index}
+                                    onClick={() => setQuestion(item)}
+                                    title="Click to reuse"
+                                >
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 )}
             </div>
 
-            {answer && (
-                <div className="result-box">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <p style={{ margin: 0, flex: 1 }}>{answer}</p>
-                        <button
-                            onClick={() => speakAnswer(answer)}
-                            style={{
-                                background: "none",
-                                border: "none",
-                                fontSize: "18px",
-                                cursor: "pointer",
-                                marginLeft: "8px",
-                                opacity: speaking ? 0.5 : 1
-                            }}
-                            title="Read answer aloud"
-                        >
-                            🔊
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {questionHistory.length > 0 && (
-                <div className="history-box">
-                    <h4>🕘 Recent Questions</h4>
-                    <ul>
-                        {questionHistory.map((item, index) => (
-                            <li
-                                key={index}
-                                onClick={() => setQuestion(item)}
-                                style={{ cursor: "pointer" }}
-                                title="Click to reuse"
-                            >
-                                {item}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
             <style>{`
                 @keyframes pulse {
-                    0% { opacity: 1; }
-                    50% { opacity: 0.5; }
-                    100% { opacity: 1; }
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.4; }
                 }
             `}</style>
         </div>
