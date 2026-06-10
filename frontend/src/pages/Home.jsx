@@ -50,6 +50,9 @@ function Home() {
                 <div>
                     <h1>{greeting}, {username}! 👋</h1>
                     <p>{quote}</p>
+                    <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px" }}>
+                        Upload your notes → Generate quizzes, flashcards & study plans using AI
+                    </p>
                 </div>
                 <div className="welcome-date">
                     <p>📅 {date}</p>

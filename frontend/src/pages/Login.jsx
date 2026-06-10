@@ -15,6 +15,8 @@ function Login() {
 
     const handleSubmit = async () => {
         if (!username.trim() || !password.trim()) return;
+        if (username.trim().length < 3) { setError("❌ Username must be at least 3 characters."); return; }
+        if (password.length < 6) { setError("❌ Password must be at least 6 characters."); return; }
         try {
             setLoading(true);
             setError("");

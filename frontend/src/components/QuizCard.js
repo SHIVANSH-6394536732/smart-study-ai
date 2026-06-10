@@ -58,8 +58,15 @@ function QuizCard() {
             setCurrentQ(0);
             setTimeLeft(TIMER_SECONDS);
             setTimerActive(false);
-            const data = await fetchGenerateQuiz();
-            setQuiz(data.quiz);
+            const data = await fetchGenerateQuiz(() =>
+                toast.info("⏳ Backend is waking up, please wait...", { autoClose: 10000 })
+            );
+            const fixedQuiz = data.quiz.map((q) => {
+                const correct = q.answer;
+                const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+                return { ...q, options: shuffled, answer: correct };
+            });
+            setQuiz(fixedQuiz);
             setTimerActive(true);
         } catch (err) {
             setQuizError("❌ Could not generate quiz. Please upload a PDF first and try again.");
