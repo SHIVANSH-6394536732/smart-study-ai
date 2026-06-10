@@ -24,6 +24,8 @@ function Dashboard() {
         };
         load();
     }, []);
+    useEffect(() => { document.title = "Smart Study AI — Dashboard"; }, []); // ADD HERE
+
 
     if (loading) return (
         <div style={{ textAlign: "center", padding: "40px" }}>
@@ -46,7 +48,6 @@ function Dashboard() {
     const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
     const diffColor = (d) => d === "Hard" ? "var(--badge-hard-text)" : d === "Medium" ? "var(--badge-medium-text)" : "var(--badge-easy-text)";
-    useEffect(() => { document.title = "Smart Study AI — Dashboard"; }, []);
 
     return (
         <motion.div variants={container} initial="hidden" animate="show">
