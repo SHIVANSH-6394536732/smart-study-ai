@@ -76,6 +76,13 @@ function Dashboard() {
             </motion.div>
 
             {/* Score Chart */}
+            {chartData.length === 1 && (
+                <div className="card" style={{ padding: "16px 20px", textAlign: "center" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "13px" }}>
+                        📈 Take one more quiz to unlock your performance chart!
+                    </p>
+                </div>
+            )}
             {chartData.length > 1 && (
                 <motion.div variants={item} className="card" style={{ padding: "20px" }}>
                     <h2 style={{ color: "var(--text-primary)", marginBottom: "16px", padding: "0" }}>📈 Quiz Performance</h2>

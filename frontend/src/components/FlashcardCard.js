@@ -10,27 +10,22 @@ function FlashcardCard() {
     const [flippedCards, setFlippedCards] = useState({});
 
     const generateFlashcards = async () => {
+        if (flashcardLoading) return;
         try {
             setFlashcardLoading(true);
             setFlashcardError("");
             setFlashcards([]);
             setFlippedCards({});
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/generate-flashcards`);
-            if (!res.ok) {
-                const err = await res.json();
-                setFlashcardError(`❌ ${err.detail}`);
-                return;
-            }
-            const data = await fetchGenerateFlashcards();
-            setFlashcards(data.flashcards);
+            const data = await fetchGenerateFlashcards(() =>
+                toast.info("⏳ Backend is waking up, please wait...", { autoClose: 10000 })
+            );
             if (data.error) {
-                setFlashcardError(data.error);
+                setFlashcardError(`❌ ${data.error}`);
             } else {
                 setFlashcards(data.flashcards);
             }
-        } catch {
+        } catch (err) {
             setFlashcardError("❌ Could not generate flashcards. Please upload a PDF first and try again.");
-
         } finally {
             setFlashcardLoading(false);
         }

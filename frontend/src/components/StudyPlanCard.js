@@ -11,7 +11,9 @@ function StudyPlanCard() {
     const [history, setHistory] = useState([]);
 
     const handleStudy = async () => {
-        if (!topic.trim()) return;
+        if (!topic.trim()) { toast.error("❌ Please enter a topic."); return; }
+        if (topic.trim().length < 2) { toast.error("❌ Topic must be at least 2 characters."); return; }
+        if (topic.trim().length > 100) { toast.error("❌ Topic must be under 100 characters."); return; }
         try {
             setLoading(true);
             setError("");

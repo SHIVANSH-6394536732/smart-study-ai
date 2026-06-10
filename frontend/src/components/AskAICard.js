@@ -91,7 +91,8 @@ function AskAICard() {
     };
 
     const askAI = async () => {
-        if (!question.trim()) return;
+        if (!question.trim()) { toast.error("❌ Please enter a question."); return; }
+        if (question.trim().length > 500) { toast.error("❌ Question must be under 500 characters."); return; }
         try {
             setAskLoading(true);
             setAnswer("");
@@ -292,3 +293,4 @@ function AskAICard() {
 }
 
 export default AskAICard;
+

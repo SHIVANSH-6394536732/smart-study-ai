@@ -9,6 +9,7 @@ function Login() {
     const [isRegister, setIsRegister] = useState(false);
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => { document.title = "Smart Study AI — Login"; }, []);
@@ -49,14 +50,29 @@ function Login() {
                     onChange={(e) => setUsername(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
                 />
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
-                    style={{marginTop: "12px"}}
-                />
+                <div style={{ position: "relative", marginTop: "12px" }}>
+                    <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+                        style={{ width: "100%", paddingRight: "44px", marginTop: 0 }}
+                    />
+                    <button
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                            position: "absolute", right: "10px", top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none", border: "none", boxShadow: "none",
+                            cursor: "pointer", fontSize: "16px", padding: "4px",
+                            color: "var(--text-muted)"
+                        }}
+                        title={showPassword ? "Hide password" : "Show password"}
+                    >
+                        {showPassword ? "🙈" : "👁️"}
+                    </button>
+                </div>
                 <div className="button-row" style={{marginTop: "16px"}}>
                     <button onClick={handleSubmit} disabled={loading}>
                         {loading ? "Please wait..." : isRegister ? "Register" : "Login"}
