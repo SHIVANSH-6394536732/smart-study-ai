@@ -10,6 +10,7 @@ import numpy as np
 import fitz
 import random
 import json
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db, User, StudyPlan, QuizScore
@@ -221,7 +222,8 @@ def generate_quiz():
     if not pdf_store["chunks"]:
         raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
     try:
-        context = " ".join(pdf_store["chunks"][:4])
+        sample_chunks = random.sample(pdf_store["chunks"], min(6, len(pdf_store["chunks"])))
+        context = " ".join(sample_chunks)
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -263,7 +265,8 @@ def generate_flashcards():
     if not pdf_store["chunks"]:
         raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
     try:
-        context = " ".join(pdf_store["chunks"][:4])
+        sample_chunks = random.sample(pdf_store["chunks"], min(6, len(pdf_store["chunks"])))
+        context = " ".join(sample_chunks)
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
@@ -312,7 +315,20 @@ def save_quiz_score(username: str, score: int, total: int, db: Session = Depends
 def get_dashboard(username: str, db: Session = Depends(get_db)):
     plans = db.query(StudyPlan).filter(StudyPlan.username == username).order_by(StudyPlan.created_at.desc()).limit(10).all()
     scores = db.query(QuizScore).filter(QuizScore.username == username).order_by(QuizScore.created_at.desc()).limit(10).all()
+
+    streak = 0
+    today = datetime.utcnow().date()
+    check_date = today
+    all_dates = set(
+        p.created_at.date()
+        for p in db.query(StudyPlan).filter(StudyPlan.username == username).all()
+    )
+    while check_date in all_dates:
+        streak += 1
+        check_date -= timedelta(days=1)
+
     return {
         "study_plans": [{"topic": p.topic, "difficulty": p.difficulty, "tasks": p.tasks, "created_at": str(p.created_at)} for p in plans],
-        "quiz_scores": [{"score": s.score, "total": s.total, "created_at": str(s.created_at)} for s in scores]
+        "quiz_scores": [{"score": s.score, "total": s.total, "created_at": str(s.created_at)} for s in scores],
+        "streak": streak
     }

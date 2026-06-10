@@ -4,6 +4,8 @@ import { Navbar, ErrorBoundary, ProtectedRoute } from "./components";
 import { Home, Notes, Login, Dashboard } from "./pages";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { Home, Notes, Login, Dashboard, NotFound } from "./pages";
+
 
 function App() {
     return (
@@ -22,6 +24,8 @@ function App() {
                                     <Route path="notes" element={<Notes />} />
   <Route path="dashboard" element={<Dashboard />} />
                                     </Routes>
+                                    <Route path="*" element={<NotFound />} />
+
                                 </div>
                             </ErrorBoundary>
                         </ProtectedRoute>

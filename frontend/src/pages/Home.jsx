@@ -25,7 +25,7 @@ function Home() {
                 setStats({
                     plans: data.study_plans.length,
                     quizzes: data.quiz_scores.length,
-                    streak: Math.min(data.study_plans.length, 7),
+                    streak: data.streak || 0,
                 });
             } catch { }
         };
