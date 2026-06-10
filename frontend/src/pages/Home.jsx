@@ -56,7 +56,7 @@ function Home() {
                 </div>
                 <div className="welcome-date">
                     <p>📅 {date}</p>
-                    {stats.streak > 0 && <p>🔥 {stats.streak} day streak</p>}
+                    {stats.streak > 0 && <p>🔥 {stats.streak} day study streak</p>}
                 </div>
             </motion.div>
 
@@ -74,7 +74,7 @@ function Home() {
                 <div className="stat-card">
                     <div className="stat-icon">🔥</div>
                     <div className="stat-value">{stats.streak}</div>
-                    <div className="stat-label">Day Streak</div>
+                    <div className="stat-label">Study Streak</div>
                 </div>
             </motion.div>
 

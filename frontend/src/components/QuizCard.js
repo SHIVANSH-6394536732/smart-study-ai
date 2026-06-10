@@ -44,7 +44,9 @@ function QuizCard() {
         setQuizSubmitted(true);
         const score = quiz.filter((q, i) => selectedAnswers[i] === q.answer).length;
         toast.info(`Quiz auto-submitted! Score: ${score}/${quiz.length}`);
-        try { await saveQuizScore(score, quiz.length); } catch { }
+        if (Object.keys(selectedAnswers).length > 0) {
+            try { await saveQuizScore(score, quiz.length); } catch { }
+        }
     };
 
     const generateQuiz = async () => {
@@ -101,7 +103,9 @@ function QuizCard() {
         setQuizSubmitted(true);
         const score = quiz.filter((q, i) => selectedAnswers[i] === q.answer).length;
         toast.info(`Quiz submitted! Score: ${score}/${quiz.length}`);
-        try { await saveQuizScore(score, quiz.length); } catch { }
+        if (Object.keys(selectedAnswers).length > 0) {
+            try { await saveQuizScore(score, quiz.length); } catch { }
+        }
     };
 
     const downloadQuiz = () => {

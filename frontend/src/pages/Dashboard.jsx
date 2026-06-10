@@ -113,9 +113,9 @@ function Dashboard() {
                                 </span>
                             </div>
                             <ul style={{ paddingLeft: "16px", margin: "0" }}>
-                                {JSON.parse(plan.tasks).map((task, j) => (
-                                    <li key={j} style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "3px" }}>{task}</li>
-                                ))}
+                                {(() => { try { return JSON.parse(plan.tasks); } catch { return []; } })().map((task, j) => (
+                    <li key={j} style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "3px" }}>{task}</li>
+                ))}
                             </ul>
                             <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "8px" }}>{new Date(plan.created_at).toLocaleString()}</p>
                         </div>
