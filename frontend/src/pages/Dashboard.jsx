@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchDashboard } from "../services/api";
 import { motion } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { toast } from "react-toastify";
 
 function Dashboard() {
     const [data, setData] = useState(null);
@@ -11,10 +12,12 @@ function Dashboard() {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await fetchDashboard();
+                const res = await fetchDashboard(() =>
+                    toast.info("⏳ Backend is waking up, please wait...", { autoClose: 10000 })
+                );
                 setData(res);
             } catch {
-                setError("Failed to load dashboard.");
+                setError("Failed to load dashboard. Please refresh the page.");
             } finally {
                 setLoading(false);
             }
@@ -43,6 +46,7 @@ function Dashboard() {
     const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } };
 
     const diffColor = (d) => d === "Hard" ? "var(--badge-hard-text)" : d === "Medium" ? "var(--badge-medium-text)" : "var(--badge-easy-text)";
+    useEffect(() => { document.title = "Smart Study AI — Dashboard"; }, []);
 
     return (
         <motion.div variants={container} initial="hidden" animate="show">

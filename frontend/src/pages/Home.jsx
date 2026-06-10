@@ -42,6 +42,8 @@ function Home() {
         show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
     };
 
+    useEffect(() => { document.title = "Smart Study AI — Home"; }, []);
+
     return (
         <motion.div variants={container} initial="hidden" animate="show">
             <motion.div variants={item} className="welcome-banner">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../services/api";
+import { useState, useEffect } from "react";
 
 function Login() {
     const [username, setUsername] = useState("");
@@ -9,6 +10,8 @@ function Login() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => { document.title = "Smart Study AI — Login"; }, []);
 
     const handleSubmit = async () => {
         if (!username.trim() || !password.trim()) return;

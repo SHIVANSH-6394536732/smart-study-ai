@@ -12,14 +12,19 @@ function PDFUploadCard() {
     const [dragging, setDragging] = useState(false);
 
     const handleFile = (file) => {
-        if (file && file.type === "application/pdf") {
-            setPdfFile(file);
-            setPdfStatus("");
-            setPdfAnswer("");
-            toast.info(`📄 Selected: ${file.name}`);
-        } else {
-            toast.error("Please select a valid PDF file (.pdf only).");
+        if (!file) return;
+        if (file.type !== "application/pdf") {
+            toast.error("❌ Only PDF files are allowed.");
+            return;
         }
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("❌ File too large. Maximum size is 10MB.");
+            return;
+        }
+        setPdfFile(file);
+        setPdfStatus("");
+        setPdfAnswer("");
+        toast.info(`📄 Selected: ${file.name}`);
     };
 
     const handleDrop = (e) => {
@@ -33,12 +38,8 @@ function PDFUploadCard() {
         if (!pdfFile) return;
         try {
             setUploadLoading(true);
-            const data = await fetchUploadPDF(pdfFile);
-            setPdfStatus(`✅ Uploaded! Pages: ${data.pages}`);
-            toast.success(`PDF uploaded! ${data.pages} pages, ${data.chunks} chunks ready.`);
-            toast.warning(
-                "⚠️ PDF resets after 15 min of inactivity. Re-upload if answers stop working.",
-                { autoClose: 7000 }
+            const data = await fetchUploadPDF(pdfFile, () =>
+            toast.info("⏳ Backend is waking up, please wait 20-30 seconds...", { autoClose: 10000 })
             );
         } catch {
             toast.error("Upload failed. Please check your file and try again.");

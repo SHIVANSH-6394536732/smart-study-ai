@@ -1,36 +1,48 @@
 const BASE_URL = process.env.REACT_APP_API_URL;
 
-export const fetchStudyPlan = async (topic) => {
-    const res = await fetch(`${BASE_URL}/study?topic=${topic}`);
+const fetchWithWakeup = async (url, options = {}, onSlow) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+        if (onSlow) onSlow();
+    }, 4000);
+    try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeout);
+        return res;
+    } catch (e) {
+        clearTimeout(timeout);
+        throw e;
+    }
+};
+
+export const fetchStudyPlan = async (topic, onSlow) => {
+    const res = await fetchWithWakeup(`${BASE_URL}/study?topic=${encodeURIComponent(topic)}`, {}, onSlow);
     if (!res.ok) throw new Error("Failed to fetch study plan");
     return res.json();
 };
 
-export const fetchAskAI = async (question) => {
-    const res = await fetch(`${BASE_URL}/ask?question=${question}`);
+export const fetchAskAI = async (question, onSlow) => {
+    const res = await fetchWithWakeup(`${BASE_URL}/ask?question=${encodeURIComponent(question)}`, {}, onSlow);
     if (!res.ok) throw new Error("Failed to get answer");
     return res.json();
 };
 
-export const fetchUploadPDF = async (file) => {
+export const fetchUploadPDF = async (file, onSlow) => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch(`${BASE_URL}/upload-pdf`, {
-        method: "POST",
-        body: formData
-    });
+    const res = await fetchWithWakeup(`${BASE_URL}/upload-pdf`, { method: "POST", body: formData }, onSlow);
     if (!res.ok) throw new Error("Upload failed");
     return res.json();
 };
 
-export const fetchAskPDF = async (question) => {
-    const res = await fetch(`${BASE_URL}/ask-pdf?question=${question}`);
+export const fetchAskPDF = async (question, onSlow) => {
+    const res = await fetchWithWakeup(`${BASE_URL}/ask-pdf?question=${encodeURIComponent(question)}`, {}, onSlow);
     if (!res.ok) throw new Error("Failed to get answer from notes");
     return res.json();
 };
 
-export const fetchGenerateQuiz = async () => {
-    const res = await fetch(`${BASE_URL}/generate-quiz`);
+export const fetchGenerateQuiz = async (onSlow) => {
+    const res = await fetchWithWakeup(`${BASE_URL}/generate-quiz`, {}, onSlow);
     if (!res.ok) {
         const err = await res.json();
         throw new Error(err.detail);
@@ -38,15 +50,14 @@ export const fetchGenerateQuiz = async () => {
     return res.json();
 };
 
-export const fetchGenerateFlashcards = async () => {
-    const res = await fetch(`${BASE_URL}/generate-flashcards`);
+export const fetchGenerateFlashcards = async (onSlow) => {
+    const res = await fetchWithWakeup(`${BASE_URL}/generate-flashcards`, {}, onSlow);
     if (!res.ok) {
         const err = await res.json();
         throw new Error(err.detail);
     }
     return res.json();
 };
-
 
 export const registerUser = async (username, password) => {
     const res = await fetch(`${BASE_URL}/register`, {
@@ -61,8 +72,6 @@ export const registerUser = async (username, password) => {
     }
     return res.json();
 };
-
-
 
 export const loginUser = async (username, password) => {
     const res = await fetch(`${BASE_URL}/login`, {
@@ -79,16 +88,11 @@ export const loginUser = async (username, password) => {
 };
 
 export const logoutUser = async () => {
-    await fetch(`${BASE_URL}/logout`, {
-        method: "POST",
-        credentials: "include"
-    });
+    await fetch(`${BASE_URL}/logout`, { method: "POST", credentials: "include" });
 };
 
 export const getMe = async () => {
-    const res = await fetch(`${BASE_URL}/me`, {
-        credentials: "include"
-    });
+    const res = await fetch(`${BASE_URL}/me`, { credentials: "include" });
     if (!res.ok) throw new Error("Not authenticated");
     return res.json();
 };
@@ -96,8 +100,7 @@ export const getMe = async () => {
 export const saveStudyPlan = async (topic, difficulty, tasks) => {
     const username = localStorage.getItem("username");
     const res = await fetch(`${BASE_URL}/save-study-plan?username=${username}&topic=${encodeURIComponent(topic)}&difficulty=${encodeURIComponent(difficulty)}&tasks=${encodeURIComponent(tasks)}`, {
-        method: "POST",
-        credentials: "include"
+        method: "POST", credentials: "include"
     });
     if (!res.ok) throw new Error("Failed to save study plan");
     return res.json();
@@ -106,18 +109,15 @@ export const saveStudyPlan = async (topic, difficulty, tasks) => {
 export const saveQuizScore = async (score, total) => {
     const username = localStorage.getItem("username");
     const res = await fetch(`${BASE_URL}/save-quiz-score?username=${username}&score=${score}&total=${total}`, {
-        method: "POST",
-        credentials: "include"
+        method: "POST", credentials: "include"
     });
     if (!res.ok) throw new Error("Failed to save quiz score");
     return res.json();
 };
 
-export const fetchDashboard = async () => {
+export const fetchDashboard = async (onSlow) => {
     const username = localStorage.getItem("username");
-    const res = await fetch(`${BASE_URL}/dashboard?username=${username}`, {
-        credentials: "include"
-    });
+    const res = await fetchWithWakeup(`${BASE_URL}/dashboard?username=${username}`, { credentials: "include" }, onSlow);
     if (!res.ok) throw new Error("Failed to fetch dashboard");
     return res.json();
 };
