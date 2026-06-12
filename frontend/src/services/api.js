@@ -125,3 +125,9 @@ export const fetchDashboard = async (onSlow) => {
     if (!res.ok) throw new Error("Failed to fetch dashboard");
     return res.json();
 };
+
+export const fetchGenerateNotes = async (topic, onSlow) => {
+    const res = await fetchWithWakeup(`${BASE_URL}/generate-notes?topic=${encodeURIComponent(topic)}`, {}, onSlow);
+    if (!res.ok) throw new Error("Failed to generate notes");
+    return res.json();
+};

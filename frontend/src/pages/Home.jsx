@@ -65,7 +65,8 @@ function Home() {
             localStorage.setItem("pomodoro", JSON.stringify(pomodoro));
         }
         return () => clearInterval(pomodoroRef.current);
-    }, [pomodoro.running]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [pomodoro.running]);
 
     const container = {
         hidden: { opacity: 0 },
