@@ -150,6 +150,36 @@ def ask_ai(question: str):
         return {"answer": response.choices[0].message.content}
     except Exception as e:
         return {"answer": f"Error: {str(e)}"}
+        
+@app.get("/generate-notes")
+def generate_notes(topic: str):
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": """You are an expert study notes generator. Generate detailed, well-structured study notes for the given topic.
+Return ONLY a JSON object in this exact format, no extra text:
+{
+  "topic": "topic name",
+  "summary": "2-3 sentence overview",
+  "sections": [
+    {
+      "heading": "Section Title",
+      "points": ["point 1", "point 2", "point 3"]
+    }
+  ],
+  "key_terms": ["term1: definition", "term2: definition"],
+  "quick_facts": ["fact1", "fact2", "fact3"]
+}
+Generate at least 4 sections with 4-6 points each. Be detailed and educational."""},
+                {"role": "user", "content": f"Generate comprehensive study notes for: {topic}"}
+            ]
+        )
+        text = response.choices[0].message.content
+        notes = json.loads(text)
+        return notes
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.post("/upload-pdf")
 async def upload_pdf(file: UploadFile = File(...), username: str = ""):
