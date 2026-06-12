@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { fetchAskAI } from "../services/api";
 import { toast } from "react-toastify";
-const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
 
 function AskAICard() {
     const [question, setQuestion] = useState("");
+    const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
     const [answer, setAnswer] = useState("");
     const [askLoading, setAskLoading] = useState(false);
     const [questionHistory, setQuestionHistory] = useState([]);
