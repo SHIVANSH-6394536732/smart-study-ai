@@ -30,19 +30,22 @@ export const fetchAskAI = async (question, onSlow) => {
 export const fetchUploadPDF = async (file, onSlow) => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetchWithWakeup(`${BASE_URL}/upload-pdf`, { method: "POST", body: formData }, onSlow);
+    const username = localStorage.getItem("username") || "";
+    const res = await fetchWithWakeup(`${BASE_URL}/upload-pdf?username=${username}`, { method: "POST", body: formData }, onSlow);
     if (!res.ok) throw new Error("Upload failed");
     return res.json();
 };
 
 export const fetchAskPDF = async (question, onSlow) => {
-    const res = await fetchWithWakeup(`${BASE_URL}/ask-pdf?question=${encodeURIComponent(question)}`, {}, onSlow);
+    const username = localStorage.getItem("username") || "";
+    const res = await fetchWithWakeup(`${BASE_URL}/ask-pdf?question=${encodeURIComponent(question)}&username=${username}`, {}, onSlow);
     if (!res.ok) throw new Error("Failed to get answer from notes");
     return res.json();
 };
 
-export const fetchGenerateQuiz = async (onSlow) => {
-    const res = await fetchWithWakeup(`${BASE_URL}/generate-quiz`, {}, onSlow);
+export const fetchGenerateQuiz = async (onSlow, difficulty = "Medium") => {
+    const username = localStorage.getItem("username") || "";
+    const res = await fetchWithWakeup(`${BASE_URL}/generate-quiz?username=${username}&difficulty=${difficulty}`, {}, onSlow);
     if (!res.ok) {
         const err = await res.json();
         throw new Error(err.detail);
@@ -51,7 +54,8 @@ export const fetchGenerateQuiz = async (onSlow) => {
 };
 
 export const fetchGenerateFlashcards = async (onSlow) => {
-    const res = await fetchWithWakeup(`${BASE_URL}/generate-flashcards`, {}, onSlow);
+    const username = localStorage.getItem("username") || "";
+    const res = await fetchWithWakeup(`${BASE_URL}/generate-flashcards?username=${username}`, {}, onSlow);
     if (!res.ok) {
         const err = await res.json();
         throw new Error(err.detail);

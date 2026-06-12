@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StudyPlanCard, AskAICard } from "../components";
 import { motion } from "framer-motion";
 import { fetchDashboard } from "../services/api";
+import { toast } from "react-toastify";
 
 function Home() {
     const username = localStorage.getItem("username");
@@ -17,6 +18,8 @@ function Home() {
     ];
     const quote = quotes[new Date().getDay() % quotes.length];
     const [stats, setStats] = useState({ plans: 0, quizzes: 0, streak: 0 });
+    const [pomodoro, setPomodoro] = useState({ minutes: 25, seconds: 0, running: false, mode: "focus" });
+    const pomodoroRef = useRef(null);
 
     useEffect(() => {
         const load = async () => {
@@ -32,6 +35,26 @@ function Home() {
         load();
     }, []);
 
+    useEffect(() => { document.title = "Smart Study AI — Home"; }, []);
+
+    useEffect(() => {
+        if (pomodoro.running) {
+            pomodoroRef.current = setInterval(() => {
+                setPomodoro((prev) => {
+                    if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+                    if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+                    clearInterval(pomodoroRef.current);
+                    const nextMode = prev.mode === "focus" ? "break" : "focus";
+                    toast.success(prev.mode === "focus" ? "🎉 Focus session done! Take a break." : "⏰ Break over! Back to focus.");
+                    return { minutes: nextMode === "focus" ? 25 : 5, seconds: 0, running: false, mode: nextMode };
+                });
+            }, 1000);
+        } else {
+            clearInterval(pomodoroRef.current);
+        }
+        return () => clearInterval(pomodoroRef.current);
+    }, [pomodoro.running]);
+
     const container = {
         hidden: { opacity: 0 },
         show: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -41,8 +64,6 @@ function Home() {
         hidden: { opacity: 0, y: 20 },
         show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
     };
-
-    useEffect(() => { document.title = "Smart Study AI — Home"; }, []);
 
     return (
         <motion.div variants={container} initial="hidden" animate="show">
@@ -75,6 +96,38 @@ function Home() {
                     <div className="stat-icon">🔥</div>
                     <div className="stat-value">{stats.streak}</div>
                     <div className="stat-label">Study Streak</div>
+                </div>
+            </motion.div>
+
+            <motion.div variants={item} className="card" style={{ padding: "20px 24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                        <h3 style={{ color: "var(--text-primary)", fontWeight: "800", fontSize: "1rem", margin: 0 }}>
+                            {pomodoro.mode === "focus" ? "🍅 Focus Session" : "☕ Break Time"}
+                        </h3>
+                        <p style={{ color: "var(--text-muted)", fontSize: "12px", marginTop: "2px" }}>
+                            {pomodoro.mode === "focus" ? "Stay focused, avoid distractions" : "Rest your eyes, stretch a bit"}
+                        </p>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: "2rem", fontWeight: "800", color: pomodoro.mode === "focus" ? "var(--accent)" : "var(--accent2)", fontFamily: "monospace" }}>
+                            {String(pomodoro.minutes).padStart(2, "0")}:{String(pomodoro.seconds).padStart(2, "0")}
+                        </div>
+                        <div style={{ display: "flex", gap: "6px", marginTop: "8px", justifyContent: "center" }}>
+                            <button
+                                onClick={() => setPomodoro((p) => ({ ...p, running: !p.running }))}
+                                style={{ padding: "6px 16px", fontSize: "12px", background: pomodoro.running ? "linear-gradient(135deg, #f87171, #ef4444)" : "linear-gradient(135deg, #34d399, #10b981)" }}
+                            >
+                                {pomodoro.running ? "⏸ Pause" : "▶ Start"}
+                            </button>
+                            <button
+                                onClick={() => { clearInterval(pomodoroRef.current); setPomodoro({ minutes: 25, seconds: 0, running: false, mode: "focus" }); }}
+                                style={{ padding: "6px 12px", fontSize: "12px", background: "var(--glass-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", boxShadow: "none" }}
+                            >
+                                ↺
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </motion.div>
 

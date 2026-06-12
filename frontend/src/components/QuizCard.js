@@ -16,6 +16,7 @@ function QuizCard() {
     const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
     const [timerActive, setTimerActive] = useState(false);
     const timerRef = useRef(null);
+    const [difficulty, setDifficulty] = useState("Medium");
 
     useEffect(() => {
         if (!timerActive || quizSubmitted) return;
@@ -61,7 +62,8 @@ function QuizCard() {
             setTimeLeft(TIMER_SECONDS);
             setTimerActive(false);
             const data = await fetchGenerateQuiz(() =>
-                toast.info("⏳ Backend is waking up, please wait...", { autoClose: 10000 })
+                toast.info("⏳ Backend is waking up, please wait...", { autoClose: 10000 }),
+                difficulty
             );
             const fixedQuiz = data.quiz.map((q) => {
                 const correct = q.answer;
@@ -150,9 +152,29 @@ function QuizCard() {
             <p style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
                 Upload a PDF above first, then generate quiz
             </p>
-            <div className="button-row">
-                <button onClick={generateQuiz} disabled={quizLoading}>
-                    {quizLoading ? "⏳ Generating quiz..." : "Generate Quiz"}
+            <div style={{ display: "flex", gap: "8px", marginTop: "14px", flexWrap: "wrap", alignItems: "center" }}>
+                {["Easy", "Medium", "Hard"].map((d) => (
+                    <button
+                        key={d}
+                        onClick={() => setDifficulty(d)}
+                        style={{
+                            padding: "6px 16px",
+                            fontSize: "12px",
+                            background: difficulty === d
+                                ? d === "Easy" ? "linear-gradient(135deg, #34d399, #10b981)"
+                                : d === "Medium" ? "linear-gradient(135deg, #fbbf24, #f59e0b)"
+                                : "linear-gradient(135deg, #f87171, #ef4444)"
+                                : "var(--glass-bg)",
+                            color: difficulty === d ? "white" : "var(--text-secondary)",
+                            border: difficulty === d ? "none" : "1px solid var(--glass-border)",
+                            boxShadow: "none"
+                        }}
+                    >
+                        {d}
+                    </button>
+                ))}
+                <button onClick={generateQuiz} disabled={quizLoading} style={{ marginLeft: "auto" }}>
+                    {quizLoading ? "⏳ Generating..." : "Generate Quiz"}
                 </button>
             </div>
             {quizError && <p className="error">{quizError}</p>}
