@@ -144,7 +144,7 @@ function AskAICard() {
                 {[
                     { id: "llama-3.3-70b-versatile", label: "🧠 Smart", desc: "Most accurate" },
                     { id: "llama-3.1-8b-instant", label: "⚡ Fast", desc: "Quick answers" },
-                    { id: "gemma2-9b-it", label: "💎 Gemma", desc: "Google's model" }
+                    { id: "qwen-qwq-32b", label: "🔬 Reasoning", desc: "Best for complex questions" }
                 ].map((m) => (
                     <button
                         key={m.id}
