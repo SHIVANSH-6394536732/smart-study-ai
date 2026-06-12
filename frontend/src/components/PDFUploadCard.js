@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 function PDFUploadCard() {
     const [pdfFile, setPdfFile] = useState(null);
     const [pdfStatus, setPdfStatus] = useState(localStorage.getItem("pdf_uploaded") || "");
+    const [pdfReady, setPdfReady] = useState(!!localStorage.getItem("pdf_uploaded"));
     const [pdfQuestion, setPdfQuestion] = useState("");
     const [pdfAnswer, setPdfAnswer] = useState("");
     const [pdfLoading, setPdfLoading] = useState(false);
@@ -43,6 +44,7 @@ function PDFUploadCard() {
             );
             const statusMsg = `✅ Uploaded! Pages: ${result.pages}`;
             setPdfStatus(statusMsg);
+            setPdfReady(true);
             localStorage.setItem("pdf_uploaded", statusMsg);
             toast.success(`PDF uploaded! ${result.pages} pages, ${result.chunks} chunks ready.`);
             toast.warning(
@@ -98,8 +100,19 @@ function PDFUploadCard() {
                 <button onClick={uploadPDF} disabled={uploadLoading || !pdfFile}>
                     {uploadLoading ? "Uploading..." : "Upload PDF"}
                 </button>
+                {pdfReady && (
+                    <button
+                        onClick={() => { setPdfReady(false); setPdfStatus(""); setPdfFile(null); localStorage.removeItem("pdf_uploaded"); toast.info("PDF cleared."); }}
+                        style={{ background: "var(--glass-bg)", color: "var(--error)", border: "1px solid var(--glass-border)", boxShadow: "none" }}
+                    >
+                        🗑 Clear PDF
+                    </button>
+                )}
             </div>
             {pdfStatus && <p className="success">{pdfStatus}</p>}
+            {pdfReady && !pdfStatus && (
+                <p className="success">✅ PDF ready — you can ask questions, generate quiz and flashcards.</p>
+            )}
             <input
                 type="text"
                 placeholder="Ask a question from your notes..."
