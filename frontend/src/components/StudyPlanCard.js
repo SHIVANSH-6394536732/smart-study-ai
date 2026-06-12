@@ -18,6 +18,8 @@ function StudyPlanCard() {
             setLoading(true);
             setError("");
             const data = await fetchStudyPlan(topic);
+            const ytQuery = encodeURIComponent(`learn ${data.topic} tutorial`);
+            data.youtubeLink = `https://www.youtube.com/results?search_query=${ytQuery}`;
             setStudyPlan(data);
             toast.success(`Study plan for ${data.topic} ready!`);
             setHistory((prev) => [topic, ...prev]);
@@ -111,13 +113,33 @@ function StudyPlanCard() {
                             </li>
                         ))}
                     </ul>
-                    <div style={{marginTop: "12px"}}>
+                    <div style={{ marginTop: "12px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
                         <button
                             onClick={downloadStudyPlan}
                             style={{background: "#10b981", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontSize: "14px"}}
                         >
                             ⬇️ Download Study Plan PDF
                         </button>
+                        {studyPlan.youtubeLink && (
+                            <a href={studyPlan.youtubeLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                                color: "white",
+                                borderRadius: "8px",
+                                padding: "8px 16px",
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                textDecoration: "none",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px"
+                            }}
+                        >
+                            ▶ Watch on YouTube
+                        </a>
+                    )}
                     </div>
                 </div>
             )}

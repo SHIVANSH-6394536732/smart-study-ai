@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 
 function PDFUploadCard() {
     const [pdfFile, setPdfFile] = useState(null);
-    const [pdfStatus, setPdfStatus] = useState("");
+    const [pdfStatus, setPdfStatus] = useState(localStorage.getItem("pdf_uploaded") || "");
     const [pdfQuestion, setPdfQuestion] = useState("");
     const [pdfAnswer, setPdfAnswer] = useState("");
     const [pdfLoading, setPdfLoading] = useState(false);
@@ -41,7 +41,9 @@ function PDFUploadCard() {
             const result = await fetchUploadPDF(pdfFile, () =>
                 toast.info("⏳ Backend is waking up, please wait 20-30 seconds...", { autoClose: 10000 })
             );
-            setPdfStatus(`✅ Uploaded! Pages: ${result.pages}`);
+            const statusMsg = `✅ Uploaded! Pages: ${result.pages}`;
+            setPdfStatus(statusMsg);
+            localStorage.setItem("pdf_uploaded", statusMsg);
             toast.success(`PDF uploaded! ${result.pages} pages, ${result.chunks} chunks ready.`);
             toast.warning(
                 "⚠️ PDF resets after 15 min of inactivity. Re-upload if answers stop working.",
@@ -50,6 +52,7 @@ function PDFUploadCard() {
         } catch {
             toast.error("Upload failed. Please check your file and try again.");
             setPdfStatus("");
+            localStorage.removeItem("pdf_uploaded");
         } finally {
             setUploadLoading(false);
         }

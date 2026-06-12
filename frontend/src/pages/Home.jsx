@@ -18,8 +18,13 @@ function Home() {
     ];
     const quote = quotes[new Date().getDay() % quotes.length];
     const [stats, setStats] = useState({ plans: 0, quizzes: 0, streak: 0 });
-    const [pomodoro, setPomodoro] = useState({ minutes: 25, seconds: 0, running: false, mode: "focus" });
-    const pomodoroRef = useRef(null);
+    const getSavedPomodoro = () => {
+        try {
+            const saved = localStorage.getItem("pomodoro");
+            return saved ? { ...JSON.parse(saved), running: false } : { minutes: 25, seconds: 0, running: false, mode: "focus" };
+        } catch { return { minutes: 25, seconds: 0, running: false, mode: "focus" }; }
+    };
+    const [pomodoro, setPomodoro] = useState(getSavedPomodoro);    const pomodoroRef = useRef(null);
 
     useEffect(() => {
         const load = async () => {
@@ -41,16 +46,22 @@ function Home() {
         if (pomodoro.running) {
             pomodoroRef.current = setInterval(() => {
                 setPomodoro((prev) => {
-                    if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-                    if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-                    clearInterval(pomodoroRef.current);
-                    const nextMode = prev.mode === "focus" ? "break" : "focus";
-                    toast.success(prev.mode === "focus" ? "🎉 Focus session done! Take a break." : "⏰ Break over! Back to focus.");
-                    return { minutes: nextMode === "focus" ? 25 : 5, seconds: 0, running: false, mode: nextMode };
+                    let next;
+                    if (prev.seconds > 0) next = { ...prev, seconds: prev.seconds - 1 };
+                    else if (prev.minutes > 0) next = { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+                    else {
+                        clearInterval(pomodoroRef.current);
+                        const nextMode = prev.mode === "focus" ? "break" : "focus";
+                        toast.success(prev.mode === "focus" ? "🎉 Focus session done! Take a break." : "⏰ Break over! Back to focus.");
+                        next = { minutes: nextMode === "focus" ? 25 : 5, seconds: 0, running: false, mode: nextMode };
+                    }
+                    localStorage.setItem("pomodoro", JSON.stringify(next));
+                    return next;
                 });
             }, 1000);
         } else {
             clearInterval(pomodoroRef.current);
+            localStorage.setItem("pomodoro", JSON.stringify(pomodoro));
         }
         return () => clearInterval(pomodoroRef.current);
     }, [pomodoro.running]);
