@@ -110,9 +110,13 @@ function PDFUploadCard() {
                 )}
             </div>
             {pdfStatus && <p className="success">{pdfStatus}</p>}
-            {pdfReady && !pdfStatus && (
-                <p className="success">✅ PDF ready — you can ask questions, generate quiz and flashcards.</p>
-            )}
+            {pdfReady && !pdfFile && (
+    <div style={{ marginTop: "8px", padding: "10px 14px", background: "rgba(251,191,36,0.1)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: "10px" }}>
+        <p style={{ color: "var(--warning)", fontSize: "13px", fontWeight: "600", margin: 0 }}>
+            ⚠️ Your previous PDF may have reset. Please re-upload to continue using quiz and flashcards.
+        </p>
+    </div>
+)}
             <input
                 type="text"
                 placeholder="Ask a question from your notes..."
