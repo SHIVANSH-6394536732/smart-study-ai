@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { fetchAskAI } from "../services/api";
 import { toast } from "react-toastify";
+const [selectedModel, setSelectedModel] = useState("llama-3.3-70b-versatile");
 
 function AskAICard() {
     const [question, setQuestion] = useState("");
@@ -97,7 +98,10 @@ function AskAICard() {
             setAskLoading(true);
             setAnswer("");
             stopSpeaking();
-            const data = await fetchAskAI(question);
+            const data = await fetchAskAI(question, () =>
+                toast.info("⏳ Backend is waking up...", { autoClose: 10000 }),
+                selectedModel
+            );
             setAnswer(data.answer);
             setQuestionHistory((prev) => [question, ...prev.slice(0, 4)]);
             if (voiceEnabled) speakAnswer(data.answer);
@@ -136,6 +140,31 @@ function AskAICard() {
                 >
                     {voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off"}
                 </button>
+                <div style={{ display: "flex", gap: "6px", padding: "0 22px 12px", flexWrap: "wrap" }}>
+                {[
+                    { id: "llama-3.3-70b-versatile", label: "🧠 Smart", desc: "Most accurate" },
+                    { id: "llama-3.1-8b-instant", label: "⚡ Fast", desc: "Quick answers" },
+                    { id: "gemma2-9b-it", label: "💎 Gemma", desc: "Google's model" }
+                ].map((m) => (
+                    <button
+                        key={m.id}
+                        onClick={() => setSelectedModel(m.id)}
+                        title={m.desc}
+                        style={{
+                            padding: "5px 12px",
+                            fontSize: "11px",
+                            fontWeight: "600",
+                            background: selectedModel === m.id ? "linear-gradient(135deg, #6366f1, #8b5cf6)" : "var(--glass-bg)",
+                            color: selectedModel === m.id ? "white" : "var(--text-secondary)",
+                            border: selectedModel === m.id ? "none" : "1px solid var(--glass-border)",
+                            boxShadow: "none",
+                            borderRadius: "20px"
+                        }}
+                    >
+                        {m.label}
+                    </button>
+                ))}
+            </div>
             </div>
 
             <div style={{ padding: "12px 22px 22px 22px" }}>
@@ -239,6 +268,21 @@ function AskAICard() {
                                     title="Read aloud"
                                 >
                                     🔊
+                                </button>
+                                <button
+                                    onClick={() => { navigator.clipboard.writeText(answer); toast.success("📋 Copied!"); }}
+                                    style={{
+                                        background: "none",
+                                        border: "none",
+                                        fontSize: "16px",
+                                        cursor: "pointer",
+                                        boxShadow: "none",
+                                        padding: "4px",
+                                        color: "var(--text-secondary)"
+                                    }}
+                                    title="Copy to clipboard"
+                                >
+                                    📋
                                 </button>
                                 <button
                                     onClick={() => {

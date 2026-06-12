@@ -21,8 +21,8 @@ export const fetchStudyPlan = async (topic, onSlow) => {
     return res.json();
 };
 
-export const fetchAskAI = async (question, onSlow) => {
-    const res = await fetchWithWakeup(`${BASE_URL}/ask?question=${encodeURIComponent(question)}`, {}, onSlow);
+export const fetchAskAI = async (question, onSlow, model = "llama-3.3-70b-versatile") => {
+    const res = await fetchWithWakeup(`${BASE_URL}/ask?question=${encodeURIComponent(question)}&model=${model}`, {}, onSlow);
     if (!res.ok) throw new Error("Failed to get answer");
     return res.json();
 };

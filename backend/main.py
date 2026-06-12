@@ -138,10 +138,13 @@ def study(topic: str):
         }
 
 @app.get("/ask")
-def ask_ai(question: str):
+def ask_ai(question: str, model: str = "llama-3.3-70b-versatile"):
+    allowed_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it"]
+    if model not in allowed_models:
+        model = "llama-3.3-70b-versatile"
     try:
         response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful study assistant for students. Answer clearly and concisely."},
                 {"role": "user", "content": question}

@@ -194,12 +194,21 @@ function NotesGeneratorCard() {
                         </div>
                     )}
 
-                    <button
-                        onClick={downloadNotes}
-                        style={{ background: "#10b981", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer", fontSize: "14px", marginTop: "8px" }}
-                    >
-                        ⬇️ Download Notes PDF
-                    </button>
+                    <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                        <button onClick={downloadNotes} style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)", flex: 1 }}>
+                            ⬇️ Download Notes as PDF
+                        </button>
+                        <button
+                            onClick={() => {
+                                const text = `${notes.topic.toUpperCase()}\n\n${notes.summary}\n\n${notes.sections.map(s => `${s.heading}\n${s.points.map(p => `• ${p}`).join("\n")}`).join("\n\n")}\n\nKey Terms:\n${notes.key_terms?.join("\n")}\n\nQuick Facts:\n${notes.quick_facts?.join("\n")}`;
+                                navigator.clipboard.writeText(text);
+                                toast.success("📋 Notes copied!");
+                            }}
+                            style={{ background: "var(--glass-bg)", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", boxShadow: "none", padding: "10px 16px" }}
+                        >
+                            📋 Copy
+                        </button>
+                    </div>
                 </div>
             )}
 
