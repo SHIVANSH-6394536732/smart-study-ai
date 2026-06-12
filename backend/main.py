@@ -139,7 +139,7 @@ def study(topic: str):
 
 @app.get("/ask")
 def ask_ai(question: str, model: str = "llama-3.3-70b-versatile"):
-    allowed_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen-qwq-32b"]
+    allowed_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3-32b"]
     if model not in allowed_models:
         model = "llama-3.3-70b-versatile"
     try:
