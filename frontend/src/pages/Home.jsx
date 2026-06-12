@@ -3,6 +3,7 @@ import { StudyPlanCard, AskAICard } from "../components";
 import { motion } from "framer-motion";
 import { fetchDashboard } from "../services/api";
 import { toast } from "react-toastify";
+import { NotesGeneratorCard } from "../components";
 
 function Home() {
     const username = localStorage.getItem("username");
@@ -148,6 +149,9 @@ function Home() {
 
             <motion.div variants={item}>
                 <AskAICard />
+            </motion.div>
+            <motion.div variants={item}>
+                <NotesGeneratorCard />
             </motion.div>
 
             <motion.div variants={item} className="footer">

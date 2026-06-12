@@ -7,3 +7,4 @@ export { default as PDFUploadCard } from "./PDFUploadCard";
 export { default as ProtectedRoute } from "./ProtectedRoute";
 export { default as QuizCard } from "./QuizCard";
 export { default as StudyPlanCard } from "./StudyPlanCard";
+export { default as NotesGeneratorCard } from "./NotesGeneratorCard";
