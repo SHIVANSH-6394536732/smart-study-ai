@@ -19,10 +19,7 @@ from auth import hash_password, verify_password, create_access_token, create_ref
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 cohere_client = cohere.Client(os.getenv("COHERE_API_KEY"))
 
-pdf_store = {
-    "chunks": [],
-    "embeddings": []
-}
+pdf_store = {}  # {username: {"chunks": [], "embeddings": []}}
 
 class RegisterRequest(BaseModel):
     username: str
@@ -155,13 +152,16 @@ def ask_ai(question: str):
         return {"answer": f"Error: {str(e)}"}
 
 @app.post("/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...), username: str = ""):
     try:
         contents = await file.read()
         doc = fitz.open(stream=contents, filetype="pdf")
         text = ""
         for page in doc:
             text += page.get_text()
+
+        if not text.strip():
+            return {"error": "PDF appears to be scanned or image-based. Please upload a text-based PDF."}
 
         chunk_size = 900
         overlap = 175
@@ -179,16 +179,16 @@ async def upload_pdf(file: UploadFile = File(...)):
         )
         embeddings = [np.array(e) for e in response.embeddings]
 
-        pdf_store["chunks"] = chunks
-        pdf_store["embeddings"] = embeddings
+        pdf_store[username] = {"chunks": chunks, "embeddings": embeddings}
 
         return {"message": "PDF uploaded successfully", "pages": doc.page_count, "chunks": len(chunks)}
     except Exception as e:
         return {"error": str(e)}
 
 @app.get("/ask-pdf")
-def ask_pdf(question: str):
-    if not pdf_store["chunks"]:
+def ask_pdf(question: str, username: str = ""):
+    user_store = pdf_store.get(username)
+    if not user_store or not user_store["chunks"]:
         return {"answer": "No PDF uploaded yet. Please upload a PDF first."}
     try:
         q_response = cohere_client.embed(
@@ -199,12 +199,12 @@ def ask_pdf(question: str):
         q_embedding = np.array(q_response.embeddings[0])
 
         similarities = []
-        for emb in pdf_store["embeddings"]:
+        for emb in user_store["embeddings"]:
             sim = np.dot(q_embedding, emb) / (np.linalg.norm(q_embedding) * np.linalg.norm(emb))
             similarities.append(sim)
 
         top_indices = np.argsort(similarities)[-3:][::-1]
-        context = "\n\n".join([pdf_store["chunks"][i] for i in top_indices])
+        context = "\n\n".join([user_store["chunks"][i] for i in top_indices])
 
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -218,25 +218,27 @@ def ask_pdf(question: str):
         return {"answer": f"Error: {str(e)}"}
 
 @app.get("/generate-quiz")
-def generate_quiz():
-    if not pdf_store["chunks"]:
+def generate_quiz(username: str = "", difficulty: str = "Medium"):
+    user_store = pdf_store.get(username)
+    if not user_store or not user_store["chunks"]:
         raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
     try:
-        sample_chunks = random.sample(pdf_store["chunks"], min(6, len(pdf_store["chunks"])))
+        sample_chunks = random.sample(user_store["chunks"], min(6, len(user_store["chunks"])))
         context = " ".join(sample_chunks)
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": """You are a quiz generator. Generate exactly 5 MCQ questions based on the notes provided.
+                {"role": "system", "content": f"""You are a quiz generator. Generate exactly 5 {difficulty} difficulty MCQ questions based on the notes provided.
+Easy: simple recall questions. Medium: application questions. Hard: analysis and tricky questions.
 Return ONLY a JSON array, no extra text, in this exact format:
 [
-  {
+  {{
     "question": "Question here?",
     "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
     "answer": "A) option1"
-  }
+  }}
 ]"""},
-                {"role": "user", "content": f"Generate quiz from these notes:\n{context}"}
+                {"role": "user", "content": f"Generate {difficulty} difficulty quiz from these notes:\n{context}"}
             ]
         )
         text = response.choices[0].message.content
@@ -261,11 +263,12 @@ Return ONLY a JSON array, no extra text, in this exact format:
         return {"error": str(e)}
 
 @app.get("/generate-flashcards")
-def generate_flashcards():
-    if not pdf_store["chunks"]:
+def generate_flashcards(username: str = ""):
+    user_store = pdf_store.get(username)
+    if not user_store or not user_store["chunks"]:
         raise HTTPException(status_code=400, detail="No PDF uploaded yet. Please upload a PDF first.")
     try:
-        sample_chunks = random.sample(pdf_store["chunks"], min(6, len(pdf_store["chunks"])))
+        sample_chunks = random.sample(user_store["chunks"], min(6, len(user_store["chunks"])))
         context = " ".join(sample_chunks)
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
