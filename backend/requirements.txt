@@ -11,3 +11,4 @@ sqlalchemy
 psycopg2-binary
 cohere
 numpy
+slowapi 
