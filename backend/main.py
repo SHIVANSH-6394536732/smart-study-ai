@@ -10,11 +10,29 @@ import numpy as np
 import fitz
 import random
 import json
+import re
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db, User, StudyPlan, QuizScore
 from auth import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+
+
+
+def sanitize_input(text: str, max_length: int = 500) -> str:
+    if not text:
+        return ""
+    blocked = ["ignore previous", "ignore all", "system prompt", "jailbreak",
+               "forget instructions", "new instructions", "override", "disregard"]
+    text_lower = text.lower()
+    for phrase in blocked:
+        if phrase in text_lower:
+            raise HTTPException(status_code=400, detail="Invalid input detected.")
+    return text[:max_length]
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 cohere_client = cohere.Client(os.getenv("COHERE_API_KEY"))
@@ -30,6 +48,10 @@ class LoginRequest(BaseModel):
     password: str
 
 app = FastAPI()
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -118,7 +140,9 @@ def get_me(request: Request):
     return {"username": username}
 
 @app.get("/study")
-def study(topic: str):
+@limiter.limit("15/minute")
+def study(request: Request, topic: str):
+    topic = sanitize_input(topic, 100)
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -128,6 +152,7 @@ def study(topic: str):
             ]
         )
         text = response.choices[0].message.content
+        text = re.sub(r'```json|```', '', text).strip()
         plan = json.loads(text)
         return plan
     except Exception as e:
@@ -138,12 +163,14 @@ def study(topic: str):
         }
 
 @app.get("/ask")
-def ask_ai(question: str, model: str = "llama-3.3-70b-versatile"):
+@limiter.limit("20/minute")
+def ask_ai(request: Request, question: str, model: str = "llama-3.3-70b-versatile"):
+    question = sanitize_input(question, 500)
     allowed_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "qwen/qwen3-32b"]
     if model not in allowed_models:
         model = "llama-3.3-70b-versatile"
     try:
-        response = groq_client.chat.completions.create(
+        response = groq_client .chat.completions.create(
             model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful study assistant for students. Answer clearly and concisely."},
@@ -155,7 +182,9 @@ def ask_ai(question: str, model: str = "llama-3.3-70b-versatile"):
         return {"answer": f"Error: {str(e)}"}
         
 @app.get("/generate-notes")
-def generate_notes(topic: str):
+@limiter.limit("10/minute")
+def generate_notes(request: Request, topic: str):
+    topic = sanitize_input(topic, 100)
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -179,16 +208,23 @@ Generate at least 4 sections with 4-6 points each. Be detailed and educational."
             ]
         )
         text = response.choices[0].message.content
+        text = re.sub(r'```json|```', '', text).strip()
         notes = json.loads(text)
         return notes
     except Exception as e:
         return {"error": str(e)}
 
 @app.post("/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...), username: str = ""):
+@limiter.limit("5/minute")
+async def upload_pdf(request: Request, file: UploadFile = File(...), username: str = ""):
     try:
         contents = await file.read()
+        if len(contents) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
+        if file.content_type != "application/pdf":
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
         doc = fitz.open(stream=contents, filetype="pdf")
+
         text = ""
         for page in doc:
             text += page.get_text()
@@ -238,6 +274,7 @@ def ask_pdf(question: str, username: str = ""):
 
         top_indices = np.argsort(similarities)[-3:][::-1]
         context = "\n\n".join([user_store["chunks"][i] for i in top_indices])
+        context = context[:6000]
 
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -368,3 +405,4 @@ def get_dashboard(username: str, db: Session = Depends(get_db)):
         "quiz_scores": [{"score": s.score, "total": s.total, "created_at": str(s.created_at)} for s in scores],
         "streak": streak
     }
+
